@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/m_takeapicture"
+        android:icon="@drawable/baseline_add_a_photo_24"
+        android:title="Take a picture"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/m_upload"
+        android:icon="@drawable/baseline_file_upload_24"
+        android:title="Upload"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/m_crop"
+        android:icon="@drawable/baseline_crop_24"
+        android:title="Crop"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/m_delete"
+        android:icon="@drawable/baseline_delete_forever_24"
+        android:title="Delete"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/m_canvas"
+        android:title="Canvas"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/m_settings"
+        android:title="Settings"
+        app:showAsAction="never" />
+
+</menu>
