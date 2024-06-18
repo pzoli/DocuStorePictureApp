@@ -23,18 +23,3 @@ class OrganizationAdapter(private val context: Context, private val data: List<P
         return view
     }
 }
-
-class CustomStringStringPairAdapter(private val context: Context, private val data: List<Pair<String, String>>) : BaseAdapter() {
-    override fun getCount(): Int = data.size
-
-    override fun getItem(position: Int): Pair<String, String> = data[position]
-
-    override fun getItemId(position: Int): Long = position.toLong()
-
-    override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
-        val view = convertView ?: LayoutInflater.from(context).inflate(android.R.layout.simple_list_item_single_choice, parent, false)
-        val (key, value) = data[position]
-        (view as TextView).text = "$key: $value"
-        return view
-    }
-}
