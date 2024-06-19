@@ -6,6 +6,9 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
+import android.widget.AdapterView.OnItemClickListener
+import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -27,15 +30,13 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.Date
 
+
 class DocInfoActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDocInfoBinding
     lateinit var stored: StoredItems
     private var serverAddress = ""
-    private var organizations = listOf<Pair<Int,Organization>>()
-    private var subjects = listOf<Pair<Int,Subject>>()
-
-    private var selectedOrganization:Organization? = null
-    private var selectedSubject: Subject? = null
+    private var organizations = listOf<Organization>()
+    private var subjects = listOf<Subject>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,6 +59,8 @@ class DocInfoActivity : AppCompatActivity() {
             stored.restoreFromSharedPrefs(sharedPrefs)
         }
 
+        updateView()
+
         serverAddress = getServerAddress()
 
         if (serverAddress != "") {
@@ -67,48 +70,54 @@ class DocInfoActivity : AppCompatActivity() {
             startActivity(intent)
         }
         binding.btnSend.setOnClickListener {
-            if (selectedSubject != null && selectedOrganization != null) {
+            if (stored.selectedSubject != null && stored.selectedOrganization != null) {
                 stored.docInfo = DocInfo(
                     null,
-                    selectedSubject!!,
+                    stored.selectedSubject!!,
                     DocumentDirection.IN,
-                    selectedOrganization!!,
+                    stored.selectedOrganization!!,
                     null,
-                    null
+                    Date()
                 )
-                stored.docInfo.createdAt = Date()
+
                 NetworkClient().sendDocInfo(this, serverAddress, stored.docInfo)
             }
         }
     }
 
+    private fun updateView() {
+        binding.actSubject.setText(stored.selectedSubject?.value)
+        binding.actOrganization.setText(stored.selectedOrganization?.name)
+    }
+
     private fun updateSpinners() {
         getOrganizations()
-        binding.spOrganization.adapter = OrganizationAdapter(this,organizations)
 
-        binding.spOrganization.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                selectedOrganization = null
+        binding.actOrganization.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line,organizations))
+        binding.actOrganization.dropDownWidth = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+
+        binding.actOrganization.onItemClickListener =
+            OnItemClickListener { _, _, pos, id ->
+                stored.selectedOrganization = binding.actOrganization.adapter.getItem(pos) as Organization
+                Toast.makeText(
+                    this,
+                    "selected[$pos, id:${stored.selectedOrganization?.id}}",
+                    Toast.LENGTH_LONG
+                ).show()
             }
-
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                selectedOrganization = organizations[position].second
-            }
-
-        }
 
         getSubjects()
-        binding.spSubject.adapter = SubjectAdapter(this,subjects)
-        binding.spSubject.onItemSelectedListener = object : AdapterView.OnItemSelectedListener{
-            override fun onNothingSelected(parent: AdapterView<*>?) {
-                selectedSubject = null
+        binding.actSubject.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line,subjects))
+        binding.actSubject.dropDownWidth = android.view.ViewGroup.LayoutParams.MATCH_PARENT
+        binding.actSubject.onItemClickListener =
+            OnItemClickListener { _, _, pos, id ->
+                stored.selectedSubject = binding.actSubject.adapter.getItem(pos) as Subject
+                Toast.makeText(
+                    this,
+                    " selected[$pos, id:${stored.selectedSubject?.id}]",
+                    Toast.LENGTH_LONG
+                ).show()
             }
-
-            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
-                selectedSubject = subjects[position].second
-            }
-
-        }
     }
 
     private fun getOrganizations() {
@@ -123,8 +132,8 @@ class DocInfoActivity : AppCompatActivity() {
             val organizationsResult = result.await()
             val gson = Gson()
             val itemType = object : TypeToken<List<Organization>>() {}.type
-            val organizationList = gson.fromJson<List<Organization>>(organizationsResult,itemType)
-            organizations = organizationList.map { item -> Pair(item.id!!,item) }
+            organizations = gson.fromJson<List<Organization>>(organizationsResult,itemType)
+            //organizationList.map { item -> Pair(item.id!!,item) }
         }
 
     }
@@ -141,8 +150,8 @@ class DocInfoActivity : AppCompatActivity() {
             val subjectsResult = result.await()
             val gson = Gson()
             val itemType = object : TypeToken<List<Subject>>() {}.type
-            val subjectList = gson.fromJson<List<Subject>>(subjectsResult,itemType)
-            subjects = subjectList.map { item -> Pair(item.id!!,item) }
+            subjects = gson.fromJson<List<Subject>>(subjectsResult,itemType)
+            //subjectList.map { item -> Pair(item.id!!,item) }
         }
 
     }

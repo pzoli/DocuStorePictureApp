@@ -5,4 +5,9 @@ data class Organization(
     var name: String,
     var hqAddress: String,
     var hqPhone: String,
-)
+
+) {
+    override fun toString(): String {
+        return name
+    }
+}

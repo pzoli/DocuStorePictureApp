@@ -1,9 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Base.Theme.DocuStorePictureApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <item name="android:itemBackground">@color/cardview_dark_background</item>
-        <item name="android:textColor">@android:color/primary_text_dark</item>
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+    <style name="Base.Theme.DocuStorePictureApp" parent="Theme.Material3.DynamicColors.Dark.NoActionBar">
+    </style>
+    <style name="Theme.DocuStorePictureApp" parent="Base.Theme.DocuStorePictureApp" >
     </style>
 </resources>
