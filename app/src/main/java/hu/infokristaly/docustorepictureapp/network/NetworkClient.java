@@ -9,6 +9,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.File;
+import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 import hu.infokristaly.docustorepictureapp.DocInfoActivity;
 import hu.infokristaly.docustorepictureapp.MainActivity;
@@ -26,11 +32,45 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class NetworkClient {
     private Retrofit retrofit;
 
+    public static OkHttpClient getOkHttpClient() {
+        try {
+            // Create a trust manager that does not validate the certificate
+            X509TrustManager trustManager = new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] chain, String authType) {
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] chain, String authType) {
+                }
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+            };
+
+            // Create an SSL context that uses the trust manager
+            SSLContext sslContext = SSLContext.getInstance("SSL");
+            sslContext.init(null, new TrustManager[] { trustManager }, new SecureRandom());
+
+            // Create the OkHttpClient builder and set the SSL socket factory
+            OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder();
+            okHttpBuilder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);
+            okHttpBuilder.hostnameVerifier((hostname, session) -> true);
+
+            return okHttpBuilder.build();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public Retrofit getRetrofitClient(Context context, String BASE_URL) {
 
         if (retrofit == null) {
-            OkHttpClient okHttpClient = new OkHttpClient.Builder()
-                    .build();
+            //OkHttpClient okHttpClient = new OkHttpClient.Builder()
+            //        .build();
+            OkHttpClient okHttpClient = getOkHttpClient();
             Gson gson = new GsonBuilder()
                     .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
                     .create();
@@ -40,7 +80,6 @@ public class NetworkClient {
                     .client(okHttpClient)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build();
-
         }
 
         return retrofit;
@@ -48,7 +87,7 @@ public class NetworkClient {
 
     public void sendDocInfo(Context context, String serverAddress, DocInfo docInfo) {
         try {
-            Retrofit retrofit = getRetrofitClient(context, "http://" + serverAddress);
+            Retrofit retrofit = getRetrofitClient(context, "https://" + serverAddress);
 
             UploadAPIs uploadAPIs = retrofit.create(UploadAPIs.class);
             Call call = uploadAPIs.sendDocInfo(docInfo);
@@ -81,7 +120,7 @@ public class NetworkClient {
 
    public void uploadToServer(Context context, String serverAddress, DocInfo docInfo, String filePath) {
         try {
-            Retrofit retrofit = getRetrofitClient(context, "http://" + serverAddress);
+            Retrofit retrofit = getRetrofitClient(context, "https://" + serverAddress);
 
             UploadAPIs uploadAPIs = retrofit.create(UploadAPIs.class);
 

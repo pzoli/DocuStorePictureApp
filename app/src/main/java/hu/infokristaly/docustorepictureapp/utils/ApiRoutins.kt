@@ -13,10 +13,20 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.GeneralSecurityException
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.HostnameVerifier
+import javax.net.ssl.HttpsURLConnection
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 
 class ApiRoutins {
+
     companion object {
+
         fun getServerAddress(context: Context, packageName: String): String {
             val prefFile = "${packageName}_preferences"
             val sharedPreferences = context.getSharedPreferences(prefFile, Context.MODE_PRIVATE)
@@ -24,7 +34,33 @@ class ApiRoutins {
             return result
         }
 
+        fun getTrustManager(): X509TrustManager {
+            return object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                }
+
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                }
+
+                override fun getAcceptedIssuers(): Array<X509Certificate> {
+                    return arrayOf()
+                }
+            }
+        }
+        fun getSSLContext(): SSLContext {
+            val trustManager = getTrustManager()
+            val sslContext = SSLContext.getInstance("SSL")
+            sslContext.init(null, arrayOf(trustManager), SecureRandom())
+            return sslContext
+        }
+
+        fun getHostnameVerifier(): HostnameVerifier {
+            return HostnameVerifier { _, _ -> true }
+        }
         fun getApiRequest(url: URL): String {
+            val sslContext = getSSLContext()
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+            HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
             var result = ""
             try {
                 val conn = url.openConnection() as HttpURLConnection
@@ -48,6 +84,9 @@ class ApiRoutins {
         private fun deleteApiRequest(url: URL): String {
             var result = ""
             try {
+                val sslContext = getSSLContext()
+                HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+                HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
                 val conn = url.openConnection() as HttpURLConnection
                 with(conn) {
                     requestMethod = "DELETE"
@@ -69,6 +108,9 @@ class ApiRoutins {
         fun postPutApiRequest(url: URL, method: String, jsonInputString: String): String {
             var result = ""
             try {
+                val sslContext = getSSLContext()
+                HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+                HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
                 val conn = url.openConnection() as HttpURLConnection
                 with(conn) {
                     requestMethod = method
@@ -100,14 +142,18 @@ class ApiRoutins {
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
-                        val result = getApiRequest(URL("http://$serverAddress/api/subject"))
+                        val result = getApiRequest(URL("https://$serverAddress/api/subject"))
                         return@withContext result
                     }
                 }
                 val subjectsResult = result.await()
-                val gson = Gson()
-                val itemType = object : TypeToken<List<Subject>>() {}.type
-                subjectList = gson.fromJson<List<Subject>>(subjectsResult, itemType)
+                try {
+                    val gson = Gson()
+                    val itemType = object : TypeToken<List<Subject>>() {}.type
+                    subjectList = gson.fromJson<List<Subject>>(subjectsResult, itemType)
+                } catch (e: Exception) {
+                    subjectList = listOf()
+                }
             }
             return subjectList
         }
@@ -116,7 +162,7 @@ class ApiRoutins {
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
-                        val result = deleteApiRequest(URL("http://$serverAddress/api/subject/$id"))
+                        val result = deleteApiRequest(URL("https://$serverAddress/api/subject/$id"))
                         return@withContext result
                     }
                 }
@@ -151,14 +197,19 @@ class ApiRoutins {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
                         val result =
-                            ApiRoutins.getApiRequest(URL("http://$serverAddress/api/organization"))
+                            ApiRoutins.getApiRequest(URL("https://$serverAddress/api/organization"))
                         return@withContext result
                     }
                 }
                 val organizationsResult = result.await()
-                val gson = Gson()
-                val itemType = object : TypeToken<List<Organization>>() {}.type
-                organizationList = gson.fromJson<List<Organization>>(organizationsResult, itemType)
+                try {
+                    val gson = Gson()
+                    val itemType = object : TypeToken<List<Organization>>() {}.type
+                    organizationList =
+                        gson.fromJson<List<Organization>>(organizationsResult, itemType)
+                } catch (e: Exception) {
+                    organizationList = listOf()
+                }
             }
             return organizationList
         }
@@ -167,7 +218,8 @@ class ApiRoutins {
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
-                        val result = deleteApiRequest(URL("http://$serverAddress/api/organization/$id"))
+                        val result =
+                            deleteApiRequest(URL("https://$serverAddress/api/organization/$id"))
                         return@withContext result
                     }
                 }

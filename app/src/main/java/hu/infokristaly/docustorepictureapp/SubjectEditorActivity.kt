@@ -49,7 +49,7 @@ class SubjectEditorActivity : AppCompatActivity() {
             val serverAddress = ApiRoutins.getServerAddress(this,packageName)
             val gson = Gson()
             val subjectJson = gson.toJson(subject)
-            ApiRoutins.postPutSubject("http://$serverAddress/api/subject" + if (subject.id!=null) "/${subject.id}"  else "",if (subject.id == null) "POST" else "PUT", subjectJson)
+            ApiRoutins.postPutSubject("https://$serverAddress/api/subject" + if (subject.id!=null) "/${subject.id}"  else "",if (subject.id == null) "POST" else "PUT", subjectJson)
             val i = Intent()
             setResult(RESULT_OK, i)
             finish()

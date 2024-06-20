@@ -51,7 +51,7 @@ class OrganizationEditorActivity : AppCompatActivity() {
             val gson = Gson()
             val organizationJson = gson.toJson(organization)
             ApiRoutins.postPutOrganization(
-                "http://$serverAddress/api/organization"
+                "https://$serverAddress/api/organization"
                         + if (organization!!.id != null) "/${organization!!.id}" else "",
                 if (organization!!.id == null) "POST" else "PUT",
                 organizationJson
