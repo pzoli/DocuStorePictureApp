@@ -1,4 +1,4 @@
-package hu.infokristaly.docustorepictureapp;
+package hu.infokristaly.docustorepictureapp.network;
 
 import android.content.Context;
 import android.content.Intent;
@@ -9,8 +9,9 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import java.io.File;
-import java.util.Date;
 
+import hu.infokristaly.docustorepictureapp.DocInfoActivity;
+import hu.infokristaly.docustorepictureapp.MainActivity;
 import hu.infokristaly.docustorepictureapp.model.DocInfo;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -45,7 +46,7 @@ public class NetworkClient {
         return retrofit;
     }
 
-    void sendDocInfo(Context context, String serverAddress, DocInfo docInfo) {
+    public void sendDocInfo(Context context, String serverAddress, DocInfo docInfo) {
         try {
             Retrofit retrofit = getRetrofitClient(context, "http://" + serverAddress);
 
@@ -59,7 +60,7 @@ public class NetworkClient {
                     if (response.code() == 201) {
                         Toast.makeText(context, "DocInfo successfully uploaded", Toast.LENGTH_LONG).show();
                         ((DocInfoActivity)context).stored.docInfo = ((DocInfo)response.body());
-                        Intent intent = new Intent(context,MainActivity.class);
+                        Intent intent = new Intent(context, MainActivity.class);
                         context.startActivity(intent);
                     } else {
                         Toast.makeText(context, "DocInfo upload with response code " + response.code(), Toast.LENGTH_LONG).show();
@@ -78,7 +79,7 @@ public class NetworkClient {
 
     }
 
-    void uploadToServer(Context context, String serverAddress, DocInfo docInfo, String filePath) {
+   public void uploadToServer(Context context, String serverAddress, DocInfo docInfo, String filePath) {
         try {
             Retrofit retrofit = getRetrofitClient(context, "http://" + serverAddress);
 

@@ -27,11 +27,6 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/m_canvas"
-        android:title="Canvas"
-        app:showAsAction="ifRoom" />
-
-    <item
         android:id="@+id/m_settings"
         android:title="Settings"
         app:showAsAction="never" />

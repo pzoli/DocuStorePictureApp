@@ -24,6 +24,18 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".SubjectEditorActivity"
+            android:exported="false" />
+        <activity
+            android:name=".SubjectListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OrganizationListActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OrganizationEditorActivity"
+            android:exported="false" />
+        <activity
             android:name=".DocInfoActivity"
             android:exported="true">
             <intent-filter>
@@ -32,9 +44,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".CameraPreviewAction"
-            android:exported="false" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -52,8 +61,7 @@
             android:label="@string/title_activity_settings" />
         <activity
             android:name=".MainActivity"
-            android:exported="true">
-        </activity>
+            android:exported="true" />
     </application>
 
 </manifest>

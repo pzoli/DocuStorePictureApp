@@ -1,4 +1,4 @@
-package hu.infokristaly.forrasadmin.qrcodescanner.components
+package hu.infokristaly.docustorepictureapp.utils
 
 import android.content.SharedPreferences
 import android.os.Bundle

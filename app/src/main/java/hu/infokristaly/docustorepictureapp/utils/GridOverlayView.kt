@@ -1,4 +1,4 @@
-package hu.infokristaly.docustorepictureapp
+package hu.infokristaly.docustorepictureapp.utils
 
 import android.content.Context
 import android.graphics.Canvas

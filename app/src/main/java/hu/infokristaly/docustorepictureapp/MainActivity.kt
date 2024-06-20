@@ -26,10 +26,10 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import hu.infokristaly.docustorepictureapp.databinding.ActivityMainBinding
-import hu.infokristaly.docustorepictureapp.model.DocInfo
-import hu.infokristaly.docustorepictureapp.model.DocumentDirection
 import hu.infokristaly.docustorepictureapp.model.Organization
-import hu.infokristaly.forrasadmin.qrcodescanner.components.StoredItems
+import hu.infokristaly.docustorepictureapp.network.NetworkClient
+import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
+import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import hu.infokristaly.forrasimageserver.entity.Subject
 import java.io.File
 import java.io.IOException
@@ -83,7 +83,7 @@ class MainActivity : AppCompatActivity() {
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
-        serverAddress = getServerAddress()
+        serverAddress = ApiRoutins.getServerAddress(this, packageName)
     }
 
     private fun viewImage() {
@@ -93,9 +93,9 @@ class MainActivity : AppCompatActivity() {
             try {
                 val exif = ExifInterface(File(stored.imageFilePath))
                 val orientation = exif!!.getAttributeInt(
-                ExifInterface.TAG_ORIENTATION,
-                ExifInterface.ORIENTATION_UNDEFINED
-            )
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_UNDEFINED
+                )
                 bmRotated = rotateBitmap(myBitmap, orientation)
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -163,8 +163,9 @@ class MainActivity : AppCompatActivity() {
 
         toolbar = findViewById(R.id.mytoolbar)
         setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        serverAddress = getServerAddress()
+        serverAddress = ApiRoutins.getServerAddress(this, packageName)
 
         mScaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
         if (stored.imageFilePath != "") {
@@ -193,7 +194,7 @@ class MainActivity : AppCompatActivity() {
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         stored.restoreStateFromBundle(savedInstanceState)
-        serverAddress = getServerAddress()
+        serverAddress = ApiRoutins.getServerAddress(this, packageName)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -240,8 +241,8 @@ class MainActivity : AppCompatActivity() {
 
             R.id.m_upload -> {
                 if (stored.imageFilePath != "") {
-                    val subject = Subject(1,"test")
-                    val organization = Organization(1,"Organ1","","")
+                    val subject = Subject(1, "test")
+                    val organization = Organization(1, "Organ1", "", "")
 
                     NetworkClient().uploadToServer(
                         this,
@@ -251,12 +252,14 @@ class MainActivity : AppCompatActivity() {
                     )
                 }
             }
-            R.id.m_canvas -> {
-                val intent = Intent(this,CameraPreviewAction::class.java)
-                startActivity(intent)
-            }
+
             R.id.m_delete -> {
                 deleteImage()
+            }
+
+            android.R.id.home -> {
+                super.onBackPressed()
+                return true
             }
         }
         return super.onOptionsItemSelected(item)
@@ -295,14 +298,6 @@ class MainActivity : AppCompatActivity() {
         binding.imageView.scaleX = mScaleFactor
         binding.imageView.scaleY = mScaleFactor
     }
-
-    private fun getServerAddress(): String {
-        val prefFile = "${packageName}_preferences"
-        val sharedPreferences = getSharedPreferences(prefFile, Context.MODE_PRIVATE)
-        val result = sharedPreferences.getString("serveraddress", "") ?: ""
-        return result
-    }
-
 
     override fun onRequestPermissionsResult(
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray

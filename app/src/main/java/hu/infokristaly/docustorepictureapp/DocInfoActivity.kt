@@ -3,31 +3,23 @@ package hu.infokristaly.docustorepictureapp
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.view.View
-import android.widget.AdapterView
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import hu.infokristaly.docustorepictureapp.databinding.ActivityDocInfoBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.model.DocumentDirection
 import hu.infokristaly.docustorepictureapp.model.Organization
-import hu.infokristaly.forrasadmin.qrcodescanner.components.StoredItems
+import hu.infokristaly.docustorepictureapp.network.NetworkClient
+import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
+import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import hu.infokristaly.forrasimageserver.entity.Subject
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.Date
 
 
@@ -37,6 +29,24 @@ class DocInfoActivity : AppCompatActivity() {
     private var serverAddress = ""
     private var organizations = listOf<Organization>()
     private var subjects = listOf<Subject>()
+
+    val activityOrganizationListLauncher = registerForActivityResult<Intent, ActivityResult>(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult? ->
+        if (result?.resultCode == RESULT_OK) {
+            stored.selectedOrganization = result.data?.getSerializableExtra("organization") as Organization
+            updateView()
+        }
+    }
+
+    val activitySubjectListLauncher = registerForActivityResult<Intent, ActivityResult>(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult? ->
+        if (result?.resultCode == RESULT_OK) {
+            stored.selectedSubject = result.data?.getSerializableExtra("subject") as Subject
+            updateView()
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,12 +71,12 @@ class DocInfoActivity : AppCompatActivity() {
 
         updateView()
 
-        serverAddress = getServerAddress()
+        serverAddress = ApiRoutins.getServerAddress(this, packageName)
 
         if (serverAddress != "") {
-            updateSpinners()
+            updateAutoComplette()
         } else {
-            val intent = Intent(this,SettingsActivity::class.java)
+            val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
         }
         binding.btnSend.setOnClickListener {
@@ -80,8 +90,18 @@ class DocInfoActivity : AppCompatActivity() {
                     Date()
                 )
 
-                NetworkClient().sendDocInfo(this, serverAddress, stored.docInfo)
+                NetworkClient()
+                    .sendDocInfo(this, serverAddress, stored.docInfo)
             }
+        }
+        binding.btnSubject.setOnClickListener {
+            val intent = Intent(this, SubjectListActivity::class.java)
+            activitySubjectListLauncher.launch(intent)
+        }
+        binding.btnOrganization.setOnClickListener {
+            val intent = Intent(this, OrganizationListActivity::class.java)
+            activityOrganizationListLauncher.launch(intent)
+
         }
     }
 
@@ -90,15 +110,22 @@ class DocInfoActivity : AppCompatActivity() {
         binding.actOrganization.setText(stored.selectedOrganization?.name)
     }
 
-    private fun updateSpinners() {
-        getOrganizations()
+    private fun updateAutoComplette() {
+        organizations = ApiRoutins.getOrganizations(serverAddress)
 
-        binding.actOrganization.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line,organizations))
+        binding.actOrganization.setAdapter(
+            ArrayAdapter(
+                this,
+                android.R.layout.simple_dropdown_item_1line,
+                organizations
+            )
+        )
         binding.actOrganization.dropDownWidth = android.view.ViewGroup.LayoutParams.MATCH_PARENT
 
         binding.actOrganization.onItemClickListener =
             OnItemClickListener { _, _, pos, id ->
-                stored.selectedOrganization = binding.actOrganization.adapter.getItem(pos) as Organization
+                stored.selectedOrganization =
+                    binding.actOrganization.adapter.getItem(pos) as Organization
                 Toast.makeText(
                     this,
                     "selected[$pos, id:${stored.selectedOrganization?.id}}",
@@ -106,8 +133,14 @@ class DocInfoActivity : AppCompatActivity() {
                 ).show()
             }
 
-        getSubjects()
-        binding.actSubject.setAdapter(ArrayAdapter(this, android.R.layout.simple_dropdown_item_1line,subjects))
+        subjects = ApiRoutins.getSubjects(serverAddress)
+        binding.actSubject.setAdapter(
+            ArrayAdapter(
+                this,
+                android.R.layout.simple_dropdown_item_1line,
+                subjects
+            )
+        )
         binding.actSubject.dropDownWidth = android.view.ViewGroup.LayoutParams.MATCH_PARENT
         binding.actSubject.onItemClickListener =
             OnItemClickListener { _, _, pos, id ->
@@ -120,63 +153,6 @@ class DocInfoActivity : AppCompatActivity() {
             }
     }
 
-    private fun getOrganizations() {
-        runBlocking {
-            var result: Deferred<String> = async() {
-                withContext(Dispatchers.IO) {
-                    val result =
-                        getApiRequest(URL("http://$serverAddress/api/organization"))
-                    return@withContext result
-                }
-            }
-            val organizationsResult = result.await()
-            val gson = Gson()
-            val itemType = object : TypeToken<List<Organization>>() {}.type
-            organizations = gson.fromJson<List<Organization>>(organizationsResult,itemType)
-            //organizationList.map { item -> Pair(item.id!!,item) }
-        }
-
-    }
-
-    private fun getSubjects() {
-        runBlocking {
-            var result: Deferred<String> = async() {
-                withContext(Dispatchers.IO) {
-                    val result =
-                        getApiRequest(URL("http://$serverAddress/api/subject"))
-                    return@withContext result
-                }
-            }
-            val subjectsResult = result.await()
-            val gson = Gson()
-            val itemType = object : TypeToken<List<Subject>>() {}.type
-            subjects = gson.fromJson<List<Subject>>(subjectsResult,itemType)
-            //subjectList.map { item -> Pair(item.id!!,item) }
-        }
-
-    }
-
-    private fun getApiRequest(url: URL): String {
-        var result = ""
-        try {
-            val conn = url.openConnection() as HttpURLConnection
-            with(conn) {
-                requestMethod = "GET"
-                if (responseCode == HttpURLConnection.HTTP_OK) {
-                    inputStream.bufferedReader().use {
-                        it.lines().forEach { line ->
-                            result += line
-                        }
-                    }
-                }
-            }
-        } catch (e: Exception) {
-            Log.e("Exception", e.toString())
-        }
-
-        return result;
-    }
-
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         stored.saveInstanceState(outState)
@@ -185,14 +161,7 @@ class DocInfoActivity : AppCompatActivity() {
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         stored.restoreStateFromBundle(savedInstanceState)
-        serverAddress = getServerAddress()
-    }
-
-    private fun getServerAddress(): String {
-        val prefFile = "${packageName}_preferences"
-        val sharedPreferences = getSharedPreferences(prefFile, Context.MODE_PRIVATE)
-        val result = sharedPreferences.getString("serveraddress", "") ?: ""
-        return result
+        serverAddress = ApiRoutins.getServerAddress(this, packageName)
     }
 
     override fun onPause() {
