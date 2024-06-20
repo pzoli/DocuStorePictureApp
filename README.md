@@ -6,4 +6,4 @@ You need run Spring Boot server project [forras-imageserver](https://github.com/
 
 You can run this application on minimum 28 SDK version Android systems.
 
-The program needs Internet access and camera access permission.
+The program needs Internet access and camera access permissions.
