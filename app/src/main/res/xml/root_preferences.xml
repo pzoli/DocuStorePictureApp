@@ -18,6 +18,7 @@
         <EditTextPreference
             app:key="password"
             app:title="@string/password"
+            android:inputType="textPassword"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 </PreferenceScreen>
