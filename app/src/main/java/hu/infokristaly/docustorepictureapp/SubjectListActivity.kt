@@ -35,7 +35,7 @@ class SubjectListActivity : AppCompatActivity() {
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             subject = null
-            serverAddress = ApiRoutins.getServerAddress(this, packageName)
+            serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
             updateListView()
         }
     }
@@ -57,7 +57,7 @@ class SubjectListActivity : AppCompatActivity() {
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
 
         updateListView()
 
@@ -98,21 +98,22 @@ class SubjectListActivity : AppCompatActivity() {
 
         binding.btnDelete.setOnClickListener {
             if (subject != null) {
-                ApiRoutins.deleteSubject(serverAddress, subject?.id!!)
+                ApiRoutins.deleteSubject(this, subject?.id!!)
+                subject = null
                 updateListView()
             }
         }
     }
 
     private fun updateListView() {
-        subjects = ApiRoutins.getSubjects(serverAddress)
+        subjects = ApiRoutins.getSubjects(this)
         binding.lvSubjects.adapter = SubjectAdapter(this, subjects)
         binding.lvSubjects.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

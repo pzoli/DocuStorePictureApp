@@ -83,7 +83,8 @@ class MainActivity : AppCompatActivity() {
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
+
     }
 
     private fun viewImage() {
@@ -165,7 +166,7 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
 
         mScaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
         if (stored.imageFilePath != "") {
@@ -194,12 +195,12 @@ class MainActivity : AppCompatActivity() {
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         stored.restoreStateFromBundle(savedInstanceState)
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         val inflater = menuInflater
-        inflater.inflate(R.menu.appbar, menu)
+        inflater.inflate(R.menu.image_captire_menu, menu)
         return true
     }
 

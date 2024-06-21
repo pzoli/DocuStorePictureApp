@@ -3,6 +3,8 @@ package hu.infokristaly.docustorepictureapp
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
 import android.widget.Toast
@@ -10,6 +12,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import hu.infokristaly.docustorepictureapp.databinding.ActivityDocInfoBinding
@@ -29,12 +32,21 @@ class DocInfoActivity : AppCompatActivity() {
     private var serverAddress = ""
     private var organizations = listOf<Organization>()
     private var subjects = listOf<Subject>()
+    private var toolbar: Toolbar? = null
+
+    val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult? ->
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
+        updateAutoComplette()
+    }
 
     val activityOrganizationListLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            stored.selectedOrganization = result.data?.getSerializableExtra("organization") as Organization
+            stored.selectedOrganization =
+                result.data?.getSerializableExtra("organization") as Organization
             updateView()
         }
     }
@@ -62,6 +74,10 @@ class DocInfoActivity : AppCompatActivity() {
             insets
         }
 
+        toolbar = findViewById(R.id.custom_appbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+
         if (savedInstanceState != null) {
             stored.restoreStateFromBundle(savedInstanceState)
         } else {
@@ -71,13 +87,15 @@ class DocInfoActivity : AppCompatActivity() {
 
         updateView()
 
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
+        val userName = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_USERNAME)
+        val password = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_PASSWORD)
 
-        if (serverAddress != "") {
-            updateAutoComplette()
-        } else {
+        if (serverAddress == "" || userName == "" || password == "") {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
+        } else {
+            updateAutoComplette()
         }
         binding.btnSend.setOnClickListener {
             if (stored.selectedSubject != null && stored.selectedOrganization != null) {
@@ -105,13 +123,29 @@ class DocInfoActivity : AppCompatActivity() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.custom_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.m_settings -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                activitySettingsLauncher.launch(intent)
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
     private fun updateView() {
         binding.actSubject.setText(stored.selectedSubject?.value)
         binding.actOrganization.setText(stored.selectedOrganization?.name)
     }
 
     private fun updateAutoComplette() {
-        organizations = ApiRoutins.getOrganizations(serverAddress)
+        organizations = ApiRoutins.getOrganizations(this)
 
         binding.actOrganization.setAdapter(
             ArrayAdapter(
@@ -133,7 +167,7 @@ class DocInfoActivity : AppCompatActivity() {
                 ).show()
             }
 
-        subjects = ApiRoutins.getSubjects(serverAddress)
+        subjects = ApiRoutins.getSubjects(this)
         binding.actSubject.setAdapter(
             ArrayAdapter(
                 this,
@@ -161,7 +195,7 @@ class DocInfoActivity : AppCompatActivity() {
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         stored.restoreStateFromBundle(savedInstanceState)
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
     }
 
     override fun onPause() {

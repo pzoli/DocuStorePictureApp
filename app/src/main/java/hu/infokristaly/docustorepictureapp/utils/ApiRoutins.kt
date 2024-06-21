@@ -13,13 +13,12 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
-import java.security.GeneralSecurityException
 import java.security.SecureRandom
 import java.security.cert.X509Certificate
+import java.util.Base64
 import javax.net.ssl.HostnameVerifier
 import javax.net.ssl.HttpsURLConnection
 import javax.net.ssl.SSLContext
-import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
 
@@ -27,10 +26,14 @@ class ApiRoutins {
 
     companion object {
 
-        fun getServerAddress(context: Context, packageName: String): String {
-            val prefFile = "${packageName}_preferences"
+        val KEY_PASSWORD = "password"
+        val KEY_USERNAME = "username"
+        val KEY_SERVERADDRESS = "serveraddress"
+
+        fun getSharedPrefProp(context: Context, key: String): String {
+            val prefFile = "${context.packageName}_preferences"
             val sharedPreferences = context.getSharedPreferences(prefFile, Context.MODE_PRIVATE)
-            val result = sharedPreferences.getString("serveraddress", "") ?: ""
+            val result = sharedPreferences.getString(key , "") ?: ""
             return result
         }
 
@@ -57,15 +60,18 @@ class ApiRoutins {
         fun getHostnameVerifier(): HostnameVerifier {
             return HostnameVerifier { _, _ -> true }
         }
-        fun getApiRequest(url: URL): String {
+        fun getApiRequest(url: URL, userName: String, password:String): String {
             val sslContext = getSSLContext()
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
             HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
             var result = ""
+            val userCredentials = "$userName:$password"
+            val basicAuth = "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
             try {
                 val conn = url.openConnection() as HttpURLConnection
                 with(conn) {
                     requestMethod = "GET"
+                    setRequestProperty("Authorization", basicAuth)
                     if (responseCode == HttpURLConnection.HTTP_OK) {
                         inputStream.bufferedReader().use {
                             it.lines().forEach { line ->
@@ -81,8 +87,11 @@ class ApiRoutins {
             return result;
         }
 
-        private fun deleteApiRequest(url: URL): String {
+        private fun deleteApiRequest(url: URL, userName: String, password:String): String {
             var result = ""
+            val userCredentials = "$userName:$password"
+            val basicAuth =
+                "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
             try {
                 val sslContext = getSSLContext()
                 HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
@@ -90,6 +99,7 @@ class ApiRoutins {
                 val conn = url.openConnection() as HttpURLConnection
                 with(conn) {
                     requestMethod = "DELETE"
+                    setRequestProperty("Authorization", basicAuth)
                     if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_NO_CONTENT) {
                         inputStream.bufferedReader().use {
                             it.lines().forEach { line ->
@@ -105,8 +115,11 @@ class ApiRoutins {
             return result;
         }
 
-        fun postPutApiRequest(url: URL, method: String, jsonInputString: String): String {
+        fun postPutApiRequest(url: URL, method: String, jsonInputString: String, userName: String, password:String): String {
             var result = ""
+            val userCredentials = "$userName:$password"
+            val basicAuth = "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
+
             try {
                 val sslContext = getSSLContext()
                 HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
@@ -114,6 +127,7 @@ class ApiRoutins {
                 val conn = url.openConnection() as HttpURLConnection
                 with(conn) {
                     requestMethod = method
+                    setRequestProperty("Authorization", basicAuth)
                     setRequestProperty("Content-Type", "application/json");
                     setRequestProperty("Accept", "application/json");
                     outputStream.use { os ->
@@ -137,12 +151,15 @@ class ApiRoutins {
             return result;
         }
 
-        fun getSubjects(serverAddress: String): List<Subject> {
+        fun getSubjects(context: Context): List<Subject> {
             var subjectList: List<Subject>
+            val userName = getSharedPrefProp(context, KEY_USERNAME)
+            val password = getSharedPrefProp(context, KEY_PASSWORD)
+            val serverAddress = getSharedPrefProp(context, KEY_SERVERADDRESS)
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
-                        val result = getApiRequest(URL("https://$serverAddress/api/subject"))
+                        val result = getApiRequest(URL("https://$serverAddress/api/subject"),userName,password)
                         return@withContext result
                     }
                 }
@@ -158,11 +175,14 @@ class ApiRoutins {
             return subjectList
         }
 
-        fun deleteSubject(serverAddress: String, id: Int) {
+        fun deleteSubject(context: Context, id: Int) {
+            val userName = getSharedPrefProp(context, KEY_USERNAME)
+            val password = getSharedPrefProp(context, KEY_PASSWORD)
+            val serverAddress = getSharedPrefProp(context, KEY_SERVERADDRESS)
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
-                        val result = deleteApiRequest(URL("https://$serverAddress/api/subject/$id"))
+                        val result = deleteApiRequest(URL("https://$serverAddress/api/subject/$id"), userName, password)
                         return@withContext result
                     }
                 }
@@ -170,12 +190,14 @@ class ApiRoutins {
             }
         }
 
-        fun postPutSubject(url: String, method: String, jsonString: String): Subject? {
+        fun postPutSubject(context: Context, url: String, method: String, jsonString: String): Subject? {
             var subject: Subject?
+            val userName = getSharedPrefProp(context, KEY_USERNAME)
+            val password = getSharedPrefProp(context, KEY_PASSWORD)
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
-                        val result = postPutApiRequest(URL(url), method, jsonString)
+                        val result = postPutApiRequest(URL(url), method, jsonString, userName, password)
                         return@withContext result
                     }
                 }
@@ -191,13 +213,16 @@ class ApiRoutins {
             return subject
         }
 
-        fun getOrganizations(serverAddress: String): List<Organization> {
+        fun getOrganizations(context: Context): List<Organization> {
+            val userName = getSharedPrefProp(context, KEY_USERNAME)
+            val password = getSharedPrefProp(context, KEY_PASSWORD)
+            val serverAddress = getSharedPrefProp(context, KEY_SERVERADDRESS)
             var organizationList: List<Organization>
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
                         val result =
-                            ApiRoutins.getApiRequest(URL("https://$serverAddress/api/organization"))
+                            getApiRequest(URL("https://$serverAddress/api/organization"), userName, password)
                         return@withContext result
                     }
                 }
@@ -206,7 +231,7 @@ class ApiRoutins {
                     val gson = Gson()
                     val itemType = object : TypeToken<List<Organization>>() {}.type
                     organizationList =
-                        gson.fromJson<List<Organization>>(organizationsResult, itemType)
+                        gson.fromJson(organizationsResult, itemType)
                 } catch (e: Exception) {
                     organizationList = listOf()
                 }
@@ -214,12 +239,15 @@ class ApiRoutins {
             return organizationList
         }
 
-        fun deleteOrganization(serverAddress: String, id: Int) {
+        fun deleteOrganization(context: Context, id: Int) {
+            val userName = getSharedPrefProp(context, KEY_USERNAME)
+            val password = getSharedPrefProp(context, KEY_PASSWORD)
+            val serverAddress = getSharedPrefProp(context, KEY_SERVERADDRESS)
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
                         val result =
-                            deleteApiRequest(URL("https://$serverAddress/api/organization/$id"))
+                            deleteApiRequest(URL("https://$serverAddress/api/organization/$id"), userName, password)
                         return@withContext result
                     }
                 }
@@ -227,12 +255,15 @@ class ApiRoutins {
             }
         }
 
-        fun postPutOrganization(url: String, method: String, jsonString: String): Organization? {
+        fun postPutOrganization(context: Context,url: String, method: String, jsonString: String): Organization? {
+            val userName = getSharedPrefProp(context, KEY_USERNAME)
+            val password = getSharedPrefProp(context, KEY_PASSWORD)
+
             var organization: Organization?
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
-                        val result = postPutApiRequest(URL(url), method, jsonString)
+                        val result = postPutApiRequest(URL(url), method, jsonString, userName, password)
                         return@withContext result
                     }
                 }

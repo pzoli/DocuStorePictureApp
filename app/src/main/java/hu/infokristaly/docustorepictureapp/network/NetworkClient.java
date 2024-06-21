@@ -19,6 +19,7 @@ import javax.net.ssl.X509TrustManager;
 import hu.infokristaly.docustorepictureapp.DocInfoActivity;
 import hu.infokristaly.docustorepictureapp.MainActivity;
 import hu.infokristaly.docustorepictureapp.model.DocInfo;
+import hu.infokristaly.docustorepictureapp.utils.ApiRoutins;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -32,7 +33,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class NetworkClient {
     private Retrofit retrofit;
 
-    public static OkHttpClient getOkHttpClient() {
+    public static OkHttpClient getOkHttpClient(Context context) {
         try {
             // Create a trust manager that does not validate the certificate
             X509TrustManager trustManager = new X509TrustManager() {
@@ -54,8 +55,11 @@ public class NetworkClient {
             SSLContext sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, new TrustManager[] { trustManager }, new SecureRandom());
 
+            String username = ApiRoutins.Companion.getSharedPrefProp(context, ApiRoutins.Companion.getKEY_USERNAME());
+            String password = ApiRoutins.Companion.getSharedPrefProp(context, ApiRoutins.Companion.getKEY_PASSWORD());
             // Create the OkHttpClient builder and set the SSL socket factory
             OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder();
+            okHttpBuilder.addInterceptor(new BasicAuthInterceptor(username, password));
             okHttpBuilder.sslSocketFactory(sslContext.getSocketFactory(), trustManager);
             okHttpBuilder.hostnameVerifier((hostname, session) -> true);
 
@@ -70,7 +74,7 @@ public class NetworkClient {
         if (retrofit == null) {
             //OkHttpClient okHttpClient = new OkHttpClient.Builder()
             //        .build();
-            OkHttpClient okHttpClient = getOkHttpClient();
+            OkHttpClient okHttpClient = getOkHttpClient(context);
             Gson gson = new GsonBuilder()
                     .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX")
                     .create();

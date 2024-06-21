@@ -47,10 +47,10 @@ class OrganizationEditorActivity : AppCompatActivity() {
             organization!!.name = binding.edtOrganizationName.text.toString()
             organization!!.hqAddress = binding.edtAddress.text.toString()
             organization!!.hqPhone = binding.edtPhone.text.toString()
-            val serverAddress = ApiRoutins.getServerAddress(this, packageName)
+            val serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
             val gson = Gson()
             val organizationJson = gson.toJson(organization)
-            ApiRoutins.postPutOrganization(
+            ApiRoutins.postPutOrganization( this,
                 "https://$serverAddress/api/organization"
                         + if (organization!!.id != null) "/${organization!!.id}" else "",
                 if (organization!!.id == null) "POST" else "PUT",

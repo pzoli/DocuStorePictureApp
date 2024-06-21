@@ -1,4 +1,4 @@
-<PreferenceScreen
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
@@ -9,5 +9,15 @@
             app:title="@string/server_title"
             app:useSimpleSummaryProvider="true" />
 
+    </PreferenceCategory>
+    <PreferenceCategory android:title="API account informations">
+        <EditTextPreference
+            app:key="username"
+            app:title="@string/username"
+            app:useSimpleSummaryProvider="true" />
+        <EditTextPreference
+            app:key="password"
+            app:title="@string/password"
+            app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 </PreferenceScreen>

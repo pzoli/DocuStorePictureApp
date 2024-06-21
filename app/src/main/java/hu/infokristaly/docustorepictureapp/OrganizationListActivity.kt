@@ -39,7 +39,7 @@ class OrganizationListActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            serverAddress = ApiRoutins.getServerAddress(this, packageName)
+            serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
             organization = null
             updateListView()
         }
@@ -65,7 +65,7 @@ class OrganizationListActivity : AppCompatActivity() {
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
         updateListView()
 
         binding.lvOrganizations.onItemClickListener =
@@ -94,7 +94,7 @@ class OrganizationListActivity : AppCompatActivity() {
 
         binding.btnDelete.setOnClickListener {
             if (organization != null) {
-                ApiRoutins.deleteOrganization(serverAddress,organization!!.id!!)
+                ApiRoutins.deleteOrganization(this, organization!!.id!!)
                 organization = null
                 updateListView()
             }
@@ -113,7 +113,7 @@ class OrganizationListActivity : AppCompatActivity() {
     }
 
     private fun updateListView() {
-        organizations = ApiRoutins.getOrganizations(serverAddress)
+        organizations = ApiRoutins.getOrganizations(this)
         binding.lvOrganizations.adapter = OrganizationAdapter(this, organizations)
         binding.lvOrganizations.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
     }
@@ -123,7 +123,7 @@ class OrganizationListActivity : AppCompatActivity() {
         if (savedInstanceState.getSerializable(KEY_ORGANIZATION) != null) {
             organization = savedInstanceState.getSerializable(KEY_ORGANIZATION) as Organization
         }
-        serverAddress = ApiRoutins.getServerAddress(this, packageName)
+        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

@@ -46,10 +46,10 @@ class SubjectEditorActivity : AppCompatActivity() {
 
         binding.btnSave.setOnClickListener {
             subject.value = binding.edtSubjectValue.text.toString()
-            val serverAddress = ApiRoutins.getServerAddress(this,packageName)
+            val serverAddress = ApiRoutins.getSharedPrefProp(this,ApiRoutins.KEY_SERVERADDRESS)
             val gson = Gson()
             val subjectJson = gson.toJson(subject)
-            ApiRoutins.postPutSubject("https://$serverAddress/api/subject" + if (subject.id!=null) "/${subject.id}"  else "",if (subject.id == null) "POST" else "PUT", subjectJson)
+            ApiRoutins.postPutSubject(this,"https://$serverAddress/api/subject" + if (subject.id!=null) "/${subject.id}"  else "",if (subject.id == null) "POST" else "PUT", subjectJson)
             val i = Intent()
             setResult(RESULT_OK, i)
             finish()
