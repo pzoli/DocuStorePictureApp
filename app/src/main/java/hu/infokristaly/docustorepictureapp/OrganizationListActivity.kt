@@ -30,16 +30,13 @@ class OrganizationListActivity : AppCompatActivity() {
     private lateinit var binding: ActivityOrganizationListBinding
     private lateinit var appbar: Toolbar
 
-    private val KEY_ORGANIZATION = "organization"
     private var organization: Organization? = null
     private var organizations = listOf<Organization>()
-    private var serverAddress = ""
 
     val activityOrganizationEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
             organization = null
             updateListView()
         }
@@ -58,14 +55,13 @@ class OrganizationListActivity : AppCompatActivity() {
             insets
         }
 
-        if (savedInstanceState?.getSerializable(KEY_ORGANIZATION) != null) {
-            organization = savedInstanceState.getSerializable(KEY_ORGANIZATION) as Organization
+        if (savedInstanceState?.getSerializable(getString(R.string.KEY_ORGANIZATION)) != null) {
+            organization = savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) as Organization
         }
         appbar = findViewById(R.id.custom_appbar)
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
         updateListView()
 
         binding.lvOrganizations.onItemClickListener =
@@ -77,7 +73,7 @@ class OrganizationListActivity : AppCompatActivity() {
             val intent = Intent(this, OrganizationEditorActivity::class.java)
             val organizationNew = Organization(null,"","", "")
             val bundle = Bundle();
-            bundle.putSerializable(KEY_ORGANIZATION, organizationNew)
+            bundle.putSerializable(getString(R.string.KEY_ORGANIZATION), organizationNew)
             intent.putExtras(bundle);
             activityOrganizationEditorLauncher.launch(intent)
         }
@@ -86,7 +82,7 @@ class OrganizationListActivity : AppCompatActivity() {
             if (organization != null) {
                 val intent = Intent(this, OrganizationEditorActivity::class.java)
                 val bundle = Bundle();
-                bundle.putSerializable(KEY_ORGANIZATION, organization)
+                bundle.putSerializable(getString(R.string.KEY_ORGANIZATION), organization)
                 intent.putExtras(bundle);
                 activityOrganizationEditorLauncher.launch(intent)
             }
@@ -104,7 +100,7 @@ class OrganizationListActivity : AppCompatActivity() {
             if (organization != null) {
                 val i = Intent()
                 val bundle = Bundle();
-                bundle.putSerializable(KEY_ORGANIZATION, organization)
+                bundle.putSerializable(getString(R.string.KEY_ORGANIZATION), organization)
                 i.putExtras(bundle);
                 setResult(RESULT_OK, i)
                 finish()
@@ -120,10 +116,9 @@ class OrganizationListActivity : AppCompatActivity() {
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        if (savedInstanceState.getSerializable(KEY_ORGANIZATION) != null) {
-            organization = savedInstanceState.getSerializable(KEY_ORGANIZATION) as Organization
+        if (savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) != null) {
+            organization = savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) as Organization
         }
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -138,7 +133,7 @@ class OrganizationListActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putSerializable(KEY_ORGANIZATION, organization)
+        outState.putSerializable(getString(R.string.KEY_ORGANIZATION), organization)
     }
 
 }

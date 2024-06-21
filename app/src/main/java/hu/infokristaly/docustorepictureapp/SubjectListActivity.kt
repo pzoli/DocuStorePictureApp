@@ -21,21 +21,18 @@ import hu.infokristaly.docustorepictureapp.utils.SubjectAdapter
 import hu.infokristaly.forrasimageserver.entity.Subject
 
 class SubjectListActivity : AppCompatActivity() {
-    private val KEY_SUBJECT = "subject"
 
     private lateinit var binding: ActivitySubjectListBinding
     private lateinit var appbar: Toolbar
 
     private var subject: Subject? = null
     private var subjects = listOf<Subject>()
-    private var serverAddress = ""
 
     val activitySubjectEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             subject = null
-            serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
             updateListView()
         }
     }
@@ -57,8 +54,6 @@ class SubjectListActivity : AppCompatActivity() {
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
-
         updateListView()
 
         binding.lvSubjects.onItemClickListener =
@@ -70,7 +65,7 @@ class SubjectListActivity : AppCompatActivity() {
             val intent = Intent(this, SubjectEditorActivity::class.java)
             val subjectNew = Subject(null,"")
             val bundle = Bundle();
-            bundle.putSerializable(KEY_SUBJECT, subjectNew)
+            bundle.putSerializable(getString(R.string.KEY_SUBJECT), subjectNew)
             intent.putExtras(bundle);
             activitySubjectEditorLauncher.launch(intent)
         }
@@ -79,7 +74,7 @@ class SubjectListActivity : AppCompatActivity() {
             if (subject != null) {
                 val intent = Intent(this, SubjectEditorActivity::class.java)
                 val bundle = Bundle();
-                bundle.putSerializable(KEY_SUBJECT, subject)
+                bundle.putSerializable(getString(R.string.KEY_SUBJECT), subject)
                 intent.putExtras(bundle);
                 activitySubjectEditorLauncher.launch(intent)
             }
@@ -89,7 +84,7 @@ class SubjectListActivity : AppCompatActivity() {
             if (subject != null) {
                 val i = Intent()
                 val bundle = Bundle();
-                bundle.putSerializable(KEY_SUBJECT, subject)
+                bundle.putSerializable(getString(R.string.KEY_SUBJECT), subject)
                 i.putExtras(bundle);
                 setResult(RESULT_OK, i)
                 finish()
@@ -109,11 +104,6 @@ class SubjectListActivity : AppCompatActivity() {
         subjects = ApiRoutins.getSubjects(this)
         binding.lvSubjects.adapter = SubjectAdapter(this, subjects)
         binding.lvSubjects.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
-    }
-
-    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
-        super.onRestoreInstanceState(savedInstanceState)
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {

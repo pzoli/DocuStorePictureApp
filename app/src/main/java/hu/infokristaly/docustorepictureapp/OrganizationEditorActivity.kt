@@ -17,7 +17,7 @@ class OrganizationEditorActivity : AppCompatActivity() {
     private lateinit var binding: ActivityOrganizationEditorBinding
     private lateinit var appbar: Toolbar
     private var organization: Organization? = null
-    private val KEY_ORGANIZATION = "organization"
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -26,7 +26,7 @@ class OrganizationEditorActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         if (savedInstanceState != null) {
-            organization = savedInstanceState.getSerializable(KEY_ORGANIZATION) as Organization
+            organization = savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) as Organization
         } else {
             organization = intent.getSerializableExtra("organization") as Organization
         }
@@ -47,7 +47,7 @@ class OrganizationEditorActivity : AppCompatActivity() {
             organization!!.name = binding.edtOrganizationName.text.toString()
             organization!!.hqAddress = binding.edtAddress.text.toString()
             organization!!.hqPhone = binding.edtPhone.text.toString()
-            val serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
+            val serverAddress = ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_SERVERADDRESS))
             val gson = Gson()
             val organizationJson = gson.toJson(organization)
             ApiRoutins.postPutOrganization( this,
@@ -89,12 +89,12 @@ class OrganizationEditorActivity : AppCompatActivity() {
         organization!!.name = binding.edtOrganizationName.text.toString()
         organization!!.hqAddress = binding.edtAddress.text.toString()
         organization!!.hqAddress = binding.edtPhone.text.toString()
-        outState.putSerializable(KEY_ORGANIZATION, organization)
+        outState.putSerializable(getString(R.string.KEY_ORGANIZATION), organization)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        organization = savedInstanceState.getSerializable(KEY_ORGANIZATION) as Organization
+        organization = savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) as Organization
     }
 
 }

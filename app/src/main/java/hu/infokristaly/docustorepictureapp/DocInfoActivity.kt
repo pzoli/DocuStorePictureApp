@@ -29,7 +29,7 @@ import java.util.Date
 class DocInfoActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDocInfoBinding
     lateinit var stored: StoredItems
-    private var serverAddress = ""
+
     private var organizations = listOf<Organization>()
     private var subjects = listOf<Subject>()
     private var toolbar: Toolbar? = null
@@ -37,7 +37,6 @@ class DocInfoActivity : AppCompatActivity() {
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
         updateAutoComplette()
     }
 
@@ -79,17 +78,17 @@ class DocInfoActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
         if (savedInstanceState != null) {
-            stored.restoreStateFromBundle(savedInstanceState)
+            stored.restoreStateFromBundle(this, savedInstanceState)
         } else {
             val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-            stored.restoreFromSharedPrefs(sharedPrefs)
+            stored.restoreFromSharedPrefs(this, sharedPrefs)
         }
 
         updateView()
 
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
-        val userName = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_USERNAME)
-        val password = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_PASSWORD)
+        val serverAddress = ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_SERVERADDRESS))
+        val userName = ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_USERNAME))
+        val password = ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_PASSWORD))
 
         if (serverAddress == "" || userName == "" || password == "") {
             val intent = Intent(this, SettingsActivity::class.java)
@@ -109,7 +108,7 @@ class DocInfoActivity : AppCompatActivity() {
                 )
 
                 NetworkClient()
-                    .sendDocInfo(this, serverAddress, stored.docInfo)
+                    .sendDocInfo(this, stored.docInfo)
             }
         }
         binding.btnSubject.setOnClickListener {
@@ -189,25 +188,24 @@ class DocInfoActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        stored.saveInstanceState(outState)
+        stored.saveInstanceState(this, outState)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        stored.restoreStateFromBundle(savedInstanceState)
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
+        stored.restoreStateFromBundle(this, savedInstanceState)
     }
 
     override fun onPause() {
         super.onPause()
         val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-        stored.saveState(sharedPrefs)
+        stored.saveState(this, sharedPrefs)
     }
 
     override fun onStop() {
         super.onStop()
         val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-        stored.saveState(sharedPrefs)
+        stored.saveState(this, sharedPrefs)
     }
 
 }

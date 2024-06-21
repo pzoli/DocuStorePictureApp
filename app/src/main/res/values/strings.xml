@@ -5,4 +5,13 @@
     <string name="title_activity_settings">Settings</string>
     <string name="password">Your API key password</string>
     <string name="username">Your API key user name</string>
+    <string name="KEY_SERVERADDRESS">serveraddress</string>
+    <string name="KEY_PASSWORD">password</string>
+    <string name="KEY_USERNAME">username</string>
+    <string name="KEY_IMAGEPATH">imagepath"</string>
+    <string name="KEY_DOCINFO">docinfo</string>
+    <string name="KEY_SELECTEDORGANIZATION">selectedOrganization</string>
+    <string name="KEY_SELECTEDSUBJECT">selectedSubject</string>
+    <string name="KEY_ORGANIZATION">organization</string>
+    <string name="KEY_SUBJECT">subject</string>
 </resources>

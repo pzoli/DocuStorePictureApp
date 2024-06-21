@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import hu.infokristaly.docustorepictureapp.R
 import hu.infokristaly.docustorepictureapp.model.Organization
 import hu.infokristaly.forrasimageserver.entity.Subject
 import kotlinx.coroutines.Deferred
@@ -25,11 +26,6 @@ import javax.net.ssl.X509TrustManager
 class ApiRoutins {
 
     companion object {
-
-        val KEY_PASSWORD = "password"
-        val KEY_USERNAME = "username"
-        val KEY_SERVERADDRESS = "serveraddress"
-
         fun getSharedPrefProp(context: Context, key: String): String {
             val prefFile = "${context.packageName}_preferences"
             val sharedPreferences = context.getSharedPreferences(prefFile, Context.MODE_PRIVATE)
@@ -153,9 +149,9 @@ class ApiRoutins {
 
         fun getSubjects(context: Context): List<Subject> {
             var subjectList: List<Subject>
-            val userName = getSharedPrefProp(context, KEY_USERNAME)
-            val password = getSharedPrefProp(context, KEY_PASSWORD)
-            val serverAddress = getSharedPrefProp(context, KEY_SERVERADDRESS)
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
@@ -176,9 +172,9 @@ class ApiRoutins {
         }
 
         fun deleteSubject(context: Context, id: Int) {
-            val userName = getSharedPrefProp(context, KEY_USERNAME)
-            val password = getSharedPrefProp(context, KEY_PASSWORD)
-            val serverAddress = getSharedPrefProp(context, KEY_SERVERADDRESS)
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
@@ -192,8 +188,8 @@ class ApiRoutins {
 
         fun postPutSubject(context: Context, url: String, method: String, jsonString: String): Subject? {
             var subject: Subject?
-            val userName = getSharedPrefProp(context, KEY_USERNAME)
-            val password = getSharedPrefProp(context, KEY_PASSWORD)
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
@@ -214,9 +210,9 @@ class ApiRoutins {
         }
 
         fun getOrganizations(context: Context): List<Organization> {
-            val userName = getSharedPrefProp(context, KEY_USERNAME)
-            val password = getSharedPrefProp(context, KEY_PASSWORD)
-            val serverAddress = getSharedPrefProp(context, KEY_SERVERADDRESS)
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             var organizationList: List<Organization>
             runBlocking {
                 var result: Deferred<String> = async() {
@@ -240,9 +236,9 @@ class ApiRoutins {
         }
 
         fun deleteOrganization(context: Context, id: Int) {
-            val userName = getSharedPrefProp(context, KEY_USERNAME)
-            val password = getSharedPrefProp(context, KEY_PASSWORD)
-            val serverAddress = getSharedPrefProp(context, KEY_SERVERADDRESS)
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             runBlocking {
                 var result: Deferred<String> = async() {
                     withContext(Dispatchers.IO) {
@@ -256,8 +252,8 @@ class ApiRoutins {
         }
 
         fun postPutOrganization(context: Context,url: String, method: String, jsonString: String): Organization? {
-            val userName = getSharedPrefProp(context, KEY_USERNAME)
-            val password = getSharedPrefProp(context, KEY_PASSWORD)
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
 
             var organization: Organization?
             runBlocking {

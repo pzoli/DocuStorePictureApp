@@ -29,6 +29,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+import hu.infokristaly.docustorepictureapp.R;
 
 public class NetworkClient {
     private Retrofit retrofit;
@@ -55,8 +56,8 @@ public class NetworkClient {
             SSLContext sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, new TrustManager[] { trustManager }, new SecureRandom());
 
-            String username = ApiRoutins.Companion.getSharedPrefProp(context, ApiRoutins.Companion.getKEY_USERNAME());
-            String password = ApiRoutins.Companion.getSharedPrefProp(context, ApiRoutins.Companion.getKEY_PASSWORD());
+            String username = ApiRoutins.Companion.getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME));
+            String password = ApiRoutins.Companion.getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD));
             // Create the OkHttpClient builder and set the SSL socket factory
             OkHttpClient.Builder okHttpBuilder = new OkHttpClient.Builder();
             okHttpBuilder.addInterceptor(new BasicAuthInterceptor(username, password));
@@ -89,8 +90,9 @@ public class NetworkClient {
         return retrofit;
     }
 
-    public void sendDocInfo(Context context, String serverAddress, DocInfo docInfo) {
+    public void sendDocInfo(Context context, DocInfo docInfo) {
         try {
+            String serverAddress = ApiRoutins.Companion.getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS));
             Retrofit retrofit = getRetrofitClient(context, "https://" + serverAddress);
 
             UploadAPIs uploadAPIs = retrofit.create(UploadAPIs.class);
@@ -122,8 +124,9 @@ public class NetworkClient {
 
     }
 
-   public void uploadToServer(Context context, String serverAddress, DocInfo docInfo, String filePath) {
+   public void uploadToServer(Context context, DocInfo docInfo, String filePath) {
         try {
+            String serverAddress = ApiRoutins.Companion.getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS));
             Retrofit retrofit = getRetrofitClient(context, "https://" + serverAddress);
 
             UploadAPIs uploadAPIs = retrofit.create(UploadAPIs.class);

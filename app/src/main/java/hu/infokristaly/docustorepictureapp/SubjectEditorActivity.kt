@@ -46,7 +46,7 @@ class SubjectEditorActivity : AppCompatActivity() {
 
         binding.btnSave.setOnClickListener {
             subject.value = binding.edtSubjectValue.text.toString()
-            val serverAddress = ApiRoutins.getSharedPrefProp(this,ApiRoutins.KEY_SERVERADDRESS)
+            val serverAddress = ApiRoutins.getSharedPrefProp(this,getString(R.string.KEY_SERVERADDRESS))
             val gson = Gson()
             val subjectJson = gson.toJson(subject)
             ApiRoutins.postPutSubject(this,"https://$serverAddress/api/subject" + if (subject.id!=null) "/${subject.id}"  else "",if (subject.id == null) "POST" else "PUT", subjectJson)

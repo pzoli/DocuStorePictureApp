@@ -47,7 +47,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mScaleGestureDetector: ScaleGestureDetector
     private var mScaleFactor = 1.0f
     private lateinit var stored: StoredItems
-    private var serverAddress = ""
 
     private var toolbar: Toolbar? = null
 
@@ -83,7 +82,6 @@ class MainActivity : AppCompatActivity() {
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
 
     }
 
@@ -156,17 +154,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState != null) {
-            stored.restoreStateFromBundle(savedInstanceState)
+            stored.restoreStateFromBundle(this,savedInstanceState)
         } else {
             val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-            stored.restoreFromSharedPrefs(sharedPrefs)
+            stored.restoreFromSharedPrefs(this,sharedPrefs)
         }
 
         toolbar = findViewById(R.id.mytoolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
 
         mScaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
         if (stored.imageFilePath != "") {
@@ -189,13 +185,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        stored.saveInstanceState(outState)
+        stored.saveInstanceState(this,outState)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        stored.restoreStateFromBundle(savedInstanceState)
-        serverAddress = ApiRoutins.getSharedPrefProp(this, ApiRoutins.KEY_SERVERADDRESS)
+        stored.restoreStateFromBundle(this,savedInstanceState)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -247,7 +242,6 @@ class MainActivity : AppCompatActivity() {
 
                     NetworkClient().uploadToServer(
                         this,
-                        serverAddress,
                         stored.docInfo,
                         stored.imageFilePath
                     )
@@ -373,13 +367,13 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-        stored.saveState(sharedPrefs)
+        stored.saveState(this,sharedPrefs)
     }
 
     override fun onStop() {
         super.onStop()
         val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-        stored.saveState(sharedPrefs)
+        stored.saveState(this,sharedPrefs)
     }
 
 }
