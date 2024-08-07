@@ -8,14 +8,14 @@ import com.google.gson.Gson
 import hu.infokristaly.docustorepictureapp.R
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.model.Organization
-import hu.infokristaly.forrasimageserver.entity.Subject
+import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 
 class StoredItems {
 
     var imageFilePath = ""
     lateinit var docInfo: DocInfo
     var selectedOrganization: Organization? = null
-    var selectedSubject: Subject? = null
+    var selectedSubject: DocumentSubject? = null
 
     fun getSerializedDocInfo(): String {
         val gson = Gson()
@@ -71,7 +71,7 @@ class StoredItems {
     fun getSubjectFromJSON(subjectJson: String) {
         val gson = Gson()
         try {
-            selectedSubject = gson.fromJson(subjectJson, Subject::class.java)
+            selectedSubject = gson.fromJson(subjectJson, DocumentSubject::class.java)
         } catch (e: Exception) {
             Log.e("Error", e.message.toString())
         }
