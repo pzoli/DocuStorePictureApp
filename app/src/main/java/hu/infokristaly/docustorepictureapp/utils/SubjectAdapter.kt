@@ -6,12 +6,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
-import hu.infokristaly.forrasimageserver.entity.Subject
+import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 
-class SubjectAdapter(private val context: Context, private val data: List<Subject>): BaseAdapter() {
+class SubjectAdapter(private val context: Context, private val data: List<DocumentSubject>): BaseAdapter() {
     override fun getCount(): Int = data.size
 
-    override fun getItem(position: Int): Subject = data[position]
+    override fun getItem(position: Int): DocumentSubject = data[position]
 
     override fun getItemId(position: Int): Long = position.toLong()
 

@@ -22,7 +22,7 @@ import hu.infokristaly.docustorepictureapp.model.Organization
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
-import hu.infokristaly.forrasimageserver.entity.Subject
+import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 import java.util.Date
 
 
@@ -31,7 +31,7 @@ class DocInfoActivity : AppCompatActivity() {
     lateinit var stored: StoredItems
 
     private var organizations = listOf<Organization>()
-    private var subjects = listOf<Subject>()
+    private var subjects = listOf<DocumentSubject>()
     private var toolbar: Toolbar? = null
 
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
@@ -54,7 +54,7 @@ class DocInfoActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            stored.selectedSubject = result.data?.getSerializableExtra("subject") as Subject
+            stored.selectedSubject = result.data?.getSerializableExtra("subject") as DocumentSubject
             updateView()
         }
     }
@@ -177,7 +177,7 @@ class DocInfoActivity : AppCompatActivity() {
         binding.actSubject.dropDownWidth = android.view.ViewGroup.LayoutParams.MATCH_PARENT
         binding.actSubject.onItemClickListener =
             OnItemClickListener { _, _, pos, id ->
-                stored.selectedSubject = binding.actSubject.adapter.getItem(pos) as Subject
+                stored.selectedSubject = binding.actSubject.adapter.getItem(pos) as DocumentSubject
                 Toast.makeText(
                     this,
                     " selected[$pos, id:${stored.selectedSubject?.id}]",

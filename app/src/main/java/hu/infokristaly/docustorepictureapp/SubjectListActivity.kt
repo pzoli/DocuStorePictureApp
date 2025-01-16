@@ -12,21 +12,18 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import hu.infokristaly.docustorepictureapp.databinding.ActivityOrganizationEditorBinding
-import hu.infokristaly.docustorepictureapp.databinding.ActivitySubjectEditorBinding
 import hu.infokristaly.docustorepictureapp.databinding.ActivitySubjectListBinding
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
-import hu.infokristaly.docustorepictureapp.utils.OrganizationAdapter
 import hu.infokristaly.docustorepictureapp.utils.SubjectAdapter
-import hu.infokristaly.forrasimageserver.entity.Subject
+import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 
 class SubjectListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySubjectListBinding
     private lateinit var appbar: Toolbar
 
-    private var subject: Subject? = null
-    private var subjects = listOf<Subject>()
+    private var subject: DocumentSubject? = null
+    private var subjects = listOf<DocumentSubject>()
 
     val activitySubjectEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
@@ -63,7 +60,7 @@ class SubjectListActivity : AppCompatActivity() {
 
         binding.btnNew.setOnClickListener {
             val intent = Intent(this, SubjectEditorActivity::class.java)
-            val subjectNew = Subject(null,"")
+            val subjectNew = DocumentSubject(null,"")
             val bundle = Bundle();
             bundle.putSerializable(getString(R.string.KEY_SUBJECT), subjectNew)
             intent.putExtras(bundle);

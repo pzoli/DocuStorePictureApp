@@ -1,6 +1,6 @@
 package hu.infokristaly.docustorepictureapp.model
 
-import hu.infokristaly.forrasimageserver.entity.Subject
+import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 import java.util.Date
 
 enum class DocumentDirection {
@@ -8,8 +8,8 @@ enum class DocumentDirection {
 }
 
 data class DocInfo (
-    var id: Int?,
-    var subject: Subject,
+    var id: Long?,
+    var subject: DocumentSubject,
     var direction: DocumentDirection,
     var organization: Organization,
     var clerk: Clerk?,

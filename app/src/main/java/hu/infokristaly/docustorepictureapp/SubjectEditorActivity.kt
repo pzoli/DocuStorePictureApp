@@ -11,13 +11,12 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.gson.Gson
 import hu.infokristaly.docustorepictureapp.databinding.ActivitySubjectEditorBinding
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
-import hu.infokristaly.forrasimageserver.entity.Subject
-import java.net.URL
+import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 
 class SubjectEditorActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySubjectEditorBinding
     private lateinit var appbar: Toolbar
-    private lateinit var subject: Subject
+    private lateinit var subject: DocumentSubject
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -35,7 +34,7 @@ class SubjectEditorActivity : AppCompatActivity() {
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        subject = intent.getSerializableExtra("subject") as Subject
+        subject = intent.getSerializableExtra("subject") as DocumentSubject
         binding.edtSubjectValue.setText(subject.value)
 
         binding.btnCancel.setOnClickListener {

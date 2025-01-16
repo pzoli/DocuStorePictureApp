@@ -6,7 +6,6 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import androidx.exifinterface.media.ExifInterface
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
@@ -25,12 +24,12 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.exifinterface.media.ExifInterface
 import hu.infokristaly.docustorepictureapp.databinding.ActivityMainBinding
 import hu.infokristaly.docustorepictureapp.model.Organization
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
-import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
-import hu.infokristaly.forrasimageserver.entity.Subject
+import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -73,33 +72,109 @@ class MainActivity : AppCompatActivity() {
     fun deleteImage() {
         if (stored.imageFilePath != "") {
             val tempFile = File(stored.imageFilePath)
+            //deleteFromDatabase(File(tempFile.name))
+            //queryImages(tempFile.name)
             tempFile.delete()
             binding.imageView.setImageBitmap(null)
             stored.imageFilePath = ""
         }
     }
 
+    fun getFileUriFromFileName(fileName: String): Uri? {
+        val projection = arrayOf(MediaStore.Images.Media._ID)
+        val selection = "${MediaStore.Images.Media.DISPLAY_NAME} = ?"
+        val selectionArgs = arrayOf(fileName)
+
+        contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            selection,
+            selectionArgs,
+            null
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+                val id = cursor.getLong(idColumn)
+                return Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString())
+            }
+        }
+
+        return null
+    }
+    fun deleteFromDatabase(file: File) {
+        try {
+            val fileUri = getFileUriFromFileName(file.name)
+            fileUri?.let { uri ->
+                val result = contentResolver.delete(uri, null, null)
+                if (result > 0) {
+                    // success
+                } else {
+                    // fail or item not exists in database
+                }
+            }
+
+        } catch (e:Exception) {
+            Log.e("MainActivity", e.message.toString())
+        }
+    }
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
 
     }
 
+    fun queryImages(fileNameParam:String) {
+        val imageProjection = arrayOf(
+            MediaStore.Images.Media._ID,
+            MediaStore.Images.Media.DISPLAY_NAME,
+            MediaStore.Images.Media.SIZE,
+            MediaStore.Images.Media.DATE_TAKEN,
+        )
+
+        val cursor = contentResolver.query(
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+            imageProjection,
+            null,
+            null,
+            null
+        )
+
+        cursor?.use {
+            val idColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
+            val nameColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.DISPLAY_NAME)
+            val sizeColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.SIZE)
+            val dateColumn = it.getColumnIndexOrThrow(MediaStore.Images.Media.DATE_TAKEN)
+            while (it.moveToNext()) {
+                val id = it.getLong(idColumn)
+                val name = it.getString(nameColumn)
+                val size = it.getString(sizeColumn)
+                val date = it.getString(dateColumn)
+                if (name.trim().startsWith(fileNameParam.trim()) || name.trim().endsWith(fileNameParam.trim())) {
+                    Log.i("MainActivity", name)
+                }
+                Log.d("IMAGE", "$id $name $size $date")
+            }
+        }
+    }
     private fun viewImage() {
         if (stored.imageFilePath != "") {
-            val myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
-            var bmRotated = myBitmap
             try {
-                val exif = ExifInterface(File(stored.imageFilePath))
-                val orientation = exif!!.getAttributeInt(
-                    ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_UNDEFINED
-                )
-                bmRotated = rotateBitmap(myBitmap, orientation)
-            } catch (e: IOException) {
-                e.printStackTrace()
+                val myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
+                var bmRotated = myBitmap
+                try {
+                    val exif = ExifInterface(File(stored.imageFilePath))
+                    val orientation = exif!!.getAttributeInt(
+                        ExifInterface.TAG_ORIENTATION,
+                        ExifInterface.ORIENTATION_UNDEFINED
+                    )
+                    bmRotated = rotateBitmap(myBitmap, orientation)
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+                binding.imageView.setImageBitmap(bmRotated)
+            } catch (e:Exception) {
+                Log.e("MainActivity",e.message.toString())
             }
-            binding.imageView.setImageBitmap(bmRotated)
         }
     }
 
@@ -237,7 +312,7 @@ class MainActivity : AppCompatActivity() {
 
             R.id.m_upload -> {
                 if (stored.imageFilePath != "") {
-                    val subject = Subject(1, "test")
+                    val subject = DocumentSubject(1, "test")
                     val organization = Organization(1, "Organ1", "", "")
 
                     NetworkClient().uploadToServer(
@@ -277,6 +352,7 @@ class MainActivity : AppCompatActivity() {
                     MediaStore.EXTRA_OUTPUT,
                     photoURI
                 )
+                cameraIntent.putExtra("saveToGallery", false)
                 activityTakePictreLauncher.launch(cameraIntent)
             } catch (ex: Exception) {
                 Log.e("MainActivity", ex.message.toString())

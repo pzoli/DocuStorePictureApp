@@ -6,7 +6,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import hu.infokristaly.docustorepictureapp.R
 import hu.infokristaly.docustorepictureapp.model.Organization
-import hu.infokristaly.forrasimageserver.entity.Subject
+import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -67,6 +67,7 @@ class ApiRoutins {
                 val conn = url.openConnection() as HttpURLConnection
                 with(conn) {
                     requestMethod = "GET"
+                    connectTimeout = 1000
                     setRequestProperty("Authorization", basicAuth)
                     if (responseCode == HttpURLConnection.HTTP_OK) {
                         inputStream.bufferedReader().use {
@@ -147,8 +148,8 @@ class ApiRoutins {
             return result;
         }
 
-        fun getSubjects(context: Context): List<Subject> {
-            var subjectList: List<Subject>
+        fun getSubjects(context: Context): List<DocumentSubject> {
+            var subjectList: List<DocumentSubject>
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
             val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
@@ -162,8 +163,8 @@ class ApiRoutins {
                 val subjectsResult = result.await()
                 try {
                     val gson = Gson()
-                    val itemType = object : TypeToken<List<Subject>>() {}.type
-                    subjectList = gson.fromJson<List<Subject>>(subjectsResult, itemType)
+                    val itemType = object : TypeToken<List<DocumentSubject>>() {}.type
+                    subjectList = gson.fromJson<List<DocumentSubject>>(subjectsResult, itemType)
                 } catch (e: Exception) {
                     subjectList = listOf()
                 }
@@ -171,7 +172,7 @@ class ApiRoutins {
             return subjectList
         }
 
-        fun deleteSubject(context: Context, id: Int) {
+        fun deleteSubject(context: Context, id: Long) {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
             val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
@@ -186,8 +187,8 @@ class ApiRoutins {
             }
         }
 
-        fun postPutSubject(context: Context, url: String, method: String, jsonString: String): Subject? {
-            var subject: Subject?
+        fun postPutSubject(context: Context, url: String, method: String, jsonString: String): DocumentSubject? {
+            var subject: DocumentSubject?
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
             runBlocking {
@@ -200,7 +201,7 @@ class ApiRoutins {
                 val subjectResult = result.await()
                 try {
                     val gson = Gson()
-                    subject = gson.fromJson(subjectResult, Subject::class.java)
+                    subject = gson.fromJson(subjectResult, DocumentSubject::class.java)
                 } catch (e: Exception) {
                     Log.e("ApiRoutins", e.message.toString())
                     subject = null
@@ -235,7 +236,7 @@ class ApiRoutins {
             return organizationList
         }
 
-        fun deleteOrganization(context: Context, id: Int) {
+        fun deleteOrganization(context: Context, id: Long) {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
             val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
