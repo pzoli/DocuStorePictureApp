@@ -11,7 +11,7 @@ import androidx.core.view.WindowInsetsCompat
 import com.google.gson.Gson
 import hu.infokristaly.docustorepictureapp.databinding.ActivitySubjectEditorBinding
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
-import hu.infokristaly.forrasimageserver.entity.DocumentSubject
+import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 
 class SubjectEditorActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySubjectEditorBinding

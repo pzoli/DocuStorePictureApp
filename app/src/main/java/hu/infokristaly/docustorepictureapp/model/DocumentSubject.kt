@@ -1,4 +1,4 @@
-package hu.infokristaly.forrasimageserver.entity
+package hu.infokristaly.docustorepictureapp.model
 
 import java.io.Serializable
 

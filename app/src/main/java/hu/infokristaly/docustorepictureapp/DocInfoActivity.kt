@@ -22,7 +22,7 @@ import hu.infokristaly.docustorepictureapp.model.Organization
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
-import hu.infokristaly.forrasimageserver.entity.DocumentSubject
+import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 import java.util.Date
 
 

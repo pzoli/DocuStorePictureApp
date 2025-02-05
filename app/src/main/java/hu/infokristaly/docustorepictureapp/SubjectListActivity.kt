@@ -15,7 +15,7 @@ import androidx.core.view.WindowInsetsCompat
 import hu.infokristaly.docustorepictureapp.databinding.ActivitySubjectListBinding
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.SubjectAdapter
-import hu.infokristaly.forrasimageserver.entity.DocumentSubject
+import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 
 class SubjectListActivity : AppCompatActivity() {
 

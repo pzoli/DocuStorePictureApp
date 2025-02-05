@@ -8,7 +8,7 @@ import com.google.gson.Gson
 import hu.infokristaly.docustorepictureapp.R
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.model.Organization
-import hu.infokristaly.forrasimageserver.entity.DocumentSubject
+import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 
 class StoredItems {
 

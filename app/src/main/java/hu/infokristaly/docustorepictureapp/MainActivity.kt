@@ -26,10 +26,12 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.exifinterface.media.ExifInterface
 import hu.infokristaly.docustorepictureapp.databinding.ActivityMainBinding
+import hu.infokristaly.docustorepictureapp.model.DocInfo
+import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 import hu.infokristaly.docustorepictureapp.model.Organization
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
+import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
-import hu.infokristaly.forrasimageserver.entity.DocumentSubject
 import java.io.File
 import java.io.IOException
 import java.text.SimpleDateFormat
@@ -178,6 +180,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun loadImageById(id:Long) {
+        val byteArray = ApiRoutins.getImage(this, id)
+        try {
+            val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+            binding.imageView.setImageBitmap(bmp)
+        } catch (e:Exception) {
+            Log.e("MainActivity",e.message.toString())
+        }
+    }
+
     fun rotateBitmap(bitmap: Bitmap, orientation: Int): Bitmap? {
         val matrix: Matrix = Matrix()
         when (orientation) {
@@ -238,9 +250,19 @@ class MainActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.mytoolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-
         mScaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
-        if (stored.imageFilePath != "") {
+
+        if (intent.hasExtra(getString(R.string.KEY_DOCINFO))) {
+            val docInfo: DocInfo =
+                intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
+            if (docInfo.id != null) {
+                val fileList = ApiRoutins.getFileInfosForDocInfo(this, docInfo.id)
+                if (fileList.isNotEmpty()) {
+                    val firstFileId = fileList[0].id!!;
+                    loadImageById(firstFileId)
+                }
+            }
+        } else if (stored.imageFilePath != "") {
             viewImage()
         }
 

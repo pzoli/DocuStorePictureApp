@@ -5,13 +5,16 @@ import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import hu.infokristaly.docustorepictureapp.R
+import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.model.Organization
-import hu.infokristaly.forrasimageserver.entity.DocumentSubject
+import hu.infokristaly.docustorepictureapp.model.DocumentSubject
+import hu.infokristaly.docustorepictureapp.model.FileInfo
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import org.apache.commons.io.IOUtils
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.SecureRandom
@@ -83,6 +86,31 @@ class ApiRoutins {
 
             return result;
         }
+
+        fun getApiRequestAsByteArrayResult(url: URL, userName: String, password:String): ByteArray {
+            val sslContext = getSSLContext()
+            HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
+            HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
+            var result = ByteArray(0)
+            val userCredentials = "$userName:$password"
+            val basicAuth = "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
+            try {
+                val conn = url.openConnection() as HttpURLConnection
+                with(conn) {
+                    requestMethod = "GET"
+                    connectTimeout = 1000
+                    setRequestProperty("Authorization", basicAuth)
+                    if (responseCode == HttpURLConnection.HTTP_OK) {
+                        result = IOUtils.toByteArray(inputStream)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Exception", e.toString())
+            }
+
+            return result;
+        }
+
 
         private fun deleteApiRequest(url: URL, userName: String, password:String): String {
             var result = ""
@@ -274,6 +302,92 @@ class ApiRoutins {
                 }
             }
             return organization
+        }
+
+        fun deleteDocInfo(context: Context, id: Long) {
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            runBlocking {
+                var result: Deferred<String> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result =
+                            deleteApiRequest(URL("https://$serverAddress/api/docinfo/$id"), userName, password)
+                        return@withContext result
+                    }
+                }
+                result.await()
+            }
+        }
+
+        fun getDocInfos(context: Context): List<DocInfo> {
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            var docInfoList: List<DocInfo>
+            runBlocking {
+                var result: Deferred<String> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result =
+                            getApiRequest(URL("https://$serverAddress/api/docinfo"), userName, password)
+                        return@withContext result
+                    }
+                }
+                val docInfosResult = result.await()
+                try {
+                    val gson = Gson()
+                    val itemType = object : TypeToken<List<DocInfo>>() {}.type
+                    docInfoList =
+                        gson.fromJson(docInfosResult, itemType)
+                } catch (e: Exception) {
+                    docInfoList = listOf()
+                }
+            }
+            return docInfoList
+        }
+
+        fun getImage(context: Context, id: Long): ByteArray {
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            var imageResult: ByteArray
+            runBlocking {
+                var result: Deferred<ByteArray> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result =
+                            getApiRequestAsByteArrayResult(URL("https://$serverAddress/api/file/"+id.toString()), userName, password)
+                        return@withContext result
+                    }
+                }
+                imageResult = result.await()
+            }
+            return imageResult
+        }
+
+        fun getFileInfosForDocInfo(context: Context, id: Long?): List<FileInfo> {
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            var fileInfoList: List<FileInfo>
+            runBlocking {
+                var result: Deferred<String> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result =
+                            getApiRequest(URL("https://$serverAddress/api/fileinfo/bydocinfoid/"+id), userName, password)
+                        return@withContext result
+                    }
+                }
+                val fileInfosResult = result.await()
+                try {
+                    val gson = Gson()
+                    val itemType = object : TypeToken<List<FileInfo>>() {}.type
+                    fileInfoList =
+                        gson.fromJson(fileInfosResult, itemType)
+                } catch (e: Exception) {
+                    fileInfoList = listOf()
+                }
+            }
+            return fileInfoList
         }
 
     }

@@ -1,6 +1,6 @@
 package hu.infokristaly.docustorepictureapp.model
 
-import hu.infokristaly.forrasimageserver.entity.DocumentSubject
+import java.io.Serializable
 import java.util.Date
 
 enum class DocumentDirection {
@@ -9,10 +9,13 @@ enum class DocumentDirection {
 
 data class DocInfo (
     var id: Long?,
-    var subject: DocumentSubject,
-    var direction: DocumentDirection,
-    var organization: Organization,
+    var subject: DocumentSubject?,
+    var direction: DocumentDirection?,
+    var organization: Organization?,
     var clerk: Clerk?,
     var createdAt: Date?,
-) {
+) : Serializable {
+    override fun toString(): String {
+        return subject.toString() + organization.toString()
+    }
 }
