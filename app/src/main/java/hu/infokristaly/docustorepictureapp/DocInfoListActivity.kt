@@ -1,5 +1,6 @@
 package hu.infokristaly.docustorepictureapp
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
@@ -10,17 +11,20 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import hu.infokristaly.docustorepictureapp.databinding.ActivityDocinfoListBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.DocInfoAdapter
+import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import java.text.SimpleDateFormat
 
 class DocInfoListActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDocinfoListBinding
     private lateinit var appbar: Toolbar
+    private lateinit var stored: StoredItems
 
     private var docInfo: DocInfo? = null
     private var docinfos = listOf<DocInfo>()
@@ -54,12 +58,17 @@ class DocInfoListActivity : AppCompatActivity() {
             insets
         }
 
-        if (savedInstanceState?.getSerializable(getString(R.string.KEY_DOCINFO)) != null) {
-            docInfo = savedInstanceState.getSerializable(getString(R.string.KEY_DOCINFO)) as DocInfo
+        stored = StoredItems()
+        if (savedInstanceState != null) {
+            stored.restoreStateFromBundle(this,savedInstanceState)
+        } else {
+            val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+            stored.restoreFromSharedPrefs(this,sharedPrefs)
         }
+
         appbar = findViewById(R.id.custom_appbar)
         setSupportActionBar(appbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
         updateListView()
 
@@ -91,6 +100,9 @@ class DocInfoListActivity : AppCompatActivity() {
             if (docInfo != null) {
                 ApiRoutins.deleteDocInfo(this, docInfo!!.id!!)
                 docInfo = null
+                stored.lastIFileInfoId = -1
+                val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+                stored.saveState(this, sharedPrefs)
                 updateListView()
             }
         }
@@ -99,6 +111,9 @@ class DocInfoListActivity : AppCompatActivity() {
             if (docInfo != null) {
                 val intent = Intent(this, MainActivity::class.java)
                 val bundle = Bundle();
+                stored.lastIFileInfoId > -1
+                val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+                stored.saveState(this, sharedPrefs)
                 bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
                 intent.putExtras(bundle);
                 activityMainLauncher.launch(intent)
@@ -115,9 +130,8 @@ class DocInfoListActivity : AppCompatActivity() {
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        if (savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) != null) {
-            docInfo = savedInstanceState.getSerializable(getString(R.string.KEY_DOCINFO)) as DocInfo
-        }
+        stored.restoreStateFromBundle(this,savedInstanceState)
+        docInfo = stored.docInfo
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -132,7 +146,19 @@ class DocInfoListActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putSerializable(getString(R.string.KEY_ORGANIZATION), docInfo)
+        stored.saveInstanceState(this,outState)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+        stored.saveState(this,sharedPrefs)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+        stored.saveState(this,sharedPrefs)
     }
 
 }

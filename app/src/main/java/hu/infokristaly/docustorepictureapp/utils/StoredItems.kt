@@ -13,6 +13,7 @@ import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 class StoredItems {
 
     var imageFilePath = ""
+    var lastIFileInfoId : Long = -1
     lateinit var docInfo: DocInfo
     var selectedOrganization: Organization? = null
     var selectedSubject: DocumentSubject? = null
@@ -85,6 +86,7 @@ class StoredItems {
         outState.putString(context.getString(R.string.KEY_SELECTEDORGANIZATION), serializedOrganization)
         val serializeSubject = getSerializedSubject()
         outState.putString(context.getString(R.string.KEY_SELECTEDSUBJECT), serializeSubject)
+        outState.putLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID), lastIFileInfoId)
     }
 
     fun restoreStateFromBundle(context: Context, savedInstanceState: Bundle) {
@@ -93,6 +95,7 @@ class StoredItems {
             getDocInfoFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_DOCINFO)) ?: "")
             getSubjectFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_SELECTEDSUBJECT))?: "")
             getOrganizationFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_SELECTEDORGANIZATION))?:"")
+            lastIFileInfoId = savedInstanceState.getLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID))
         }
     }
 
@@ -101,6 +104,7 @@ class StoredItems {
         getDocInfoFromJSON(sharedPrefs.getString(context.getString(R.string.KEY_DOCINFO), "") ?: "")
         getSubjectFromJSON(sharedPrefs.getString(context.getString(R.string.KEY_SELECTEDSUBJECT),"")?: "")
         getOrganizationFromJSON(sharedPrefs.getString(context.getString(R.string.KEY_SELECTEDORGANIZATION),"")?:"")
+        lastIFileInfoId = sharedPrefs.getLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID),-1)
     }
 
     fun saveState(context: Context, sharedPrefs: SharedPreferences) {
@@ -109,6 +113,7 @@ class StoredItems {
             .putString(context.getString(R.string.KEY_DOCINFO), getSerializedDocInfo())
             .putString(context.getString(R.string.KEY_SELECTEDSUBJECT), getSerializedSubject())
             .putString(context.getString(R.string.KEY_SELECTEDORGANIZATION), getSerializedOrganization())
+            .putLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID), lastIFileInfoId)
             .apply()
     }
 

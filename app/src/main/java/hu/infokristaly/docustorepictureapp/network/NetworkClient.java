@@ -131,13 +131,9 @@ public class NetworkClient {
 
             UploadAPIs uploadAPIs = retrofit.create(UploadAPIs.class);
 
-            //Create a file object using file path
             File file = new File(filePath);
 
-            // Create a request body with file and image media type
             RequestBody fileReqBody = RequestBody.create(MediaType.parse("image/*"), file);
-
-            // Create MultipartBody.Part using file request-body,file name and filePart name
             MultipartBody.Part filePart = MultipartBody.Part.createFormData("file", file.getName(), fileReqBody);
 
             Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX").create();
@@ -171,4 +167,43 @@ public class NetworkClient {
             Toast.makeText(context, "File uploaded failed: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
         }
     }
+
+    public void updateOnServer(Context context, long fileInfoId, String filePath) {
+        try {
+            String serverAddress = ApiRoutins.Companion.getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS));
+            Retrofit retrofit = getRetrofitClient(context, "https://" + serverAddress);
+
+            UploadAPIs uploadAPIs = retrofit.create(UploadAPIs.class);
+
+            File file = new File(filePath);
+            RequestBody fileReqBody = RequestBody.create(MediaType.parse("image/*"), file);
+            MultipartBody.Part filePart = MultipartBody.Part.createFormData("file", file.getName(), fileReqBody);
+
+            Call call = uploadAPIs.updateImage(filePart, fileInfoId);
+
+            call.enqueue(new Callback() {
+                @Override
+                public void onResponse(Call call, Response response) {
+                    Log.e("NetworkClient", response.message());
+                    if (response.code() == 200) {
+                        if (file.delete()) {
+                            Toast.makeText(context, "File successfully uploaded", Toast.LENGTH_LONG).show();
+                        }
+                        ((MainActivity) context).deleteImage();
+                    } else {
+                        Toast.makeText(context, "File uploaded failed with code("+response.code()+")", Toast.LENGTH_LONG).show();
+                    }
+                }
+
+                @Override
+                public void onFailure(Call call, Throwable t) {
+                    Log.e("NetworkClient", t.getLocalizedMessage());
+                    Toast.makeText(context, "File uploaded failed: " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
+        } catch (Exception e) {
+            Toast.makeText(context, "File uploaded failed: " + e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+        }
+    }
+
 }

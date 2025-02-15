@@ -14,4 +14,5 @@
     <string name="KEY_SELECTEDSUBJECT">selectedSubject</string>
     <string name="KEY_ORGANIZATION">organization</string>
     <string name="KEY_SUBJECT">subject</string>
+    <string name="KEY_LAST_VIEWED_FILEINFO_ID">lastfileinfoid</string>
 </resources>

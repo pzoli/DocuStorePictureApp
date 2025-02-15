@@ -27,13 +27,15 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.exifinterface.media.ExifInterface
 import hu.infokristaly.docustorepictureapp.databinding.ActivityMainBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
-import hu.infokristaly.docustorepictureapp.model.DocumentSubject
-import hu.infokristaly.docustorepictureapp.model.Organization
+import hu.infokristaly.docustorepictureapp.model.FileInfo
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import java.io.File
 import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -49,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private var mScaleFactor = 1.0f
     private lateinit var stored: StoredItems
 
+    public final val IMAGENAME_FROM_SERVER = "IMG_FROM_SERVER"
     private var toolbar: Toolbar? = null
 
     val activityCropLauncher = registerForActivityResult<Intent, ActivityResult>(
@@ -180,10 +183,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun loadImageById(id:Long) {
-        val byteArray = ApiRoutins.getImage(this, id)
+    fun loadImageById(fineInfo:FileInfo) {
+        val byteArray = ApiRoutins.getImage(this, fineInfo.id!!)
         try {
             val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+            Files.write(Paths.get(stored.imageFilePath), byteArray)
             binding.imageView.setImageBitmap(bmp)
         } catch (e:Exception) {
             Log.e("MainActivity",e.message.toString())
@@ -230,7 +234,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        stored = StoredItems()
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -240,6 +243,7 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        stored = StoredItems()
         if (savedInstanceState != null) {
             stored.restoreStateFromBundle(this,savedInstanceState)
         } else {
@@ -253,13 +257,23 @@ class MainActivity : AppCompatActivity() {
         mScaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
 
         if (intent.hasExtra(getString(R.string.KEY_DOCINFO))) {
-            val docInfo: DocInfo =
+            stored.docInfo =
                 intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
-            if (docInfo.id != null) {
-                val fileList = ApiRoutins.getFileInfosForDocInfo(this, docInfo.id)
+            if (stored.docInfo.id != null) {
+                val fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo.id)
                 if (fileList.isNotEmpty()) {
-                    val firstFileId = fileList[0].id!!;
-                    loadImageById(firstFileId)
+                    val fileInfo = fileList.firstOrNull {
+                        it.id!!.equals(
+                            stored.lastIFileInfoId
+                        )
+                    }
+                    val currentFileInfo = if (stored.lastIFileInfoId > -1 && (fileInfo != null)) fileInfo else fileList[0]
+                    stored.lastIFileInfoId = currentFileInfo.id!!
+                    val storageDir =
+                        getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
+                    val fileName = IMAGENAME_FROM_SERVER + ".${currentFileInfo.uniqueFileName.substringAfter(".")}"
+                    stored.imageFilePath = Paths.get(storageDir, fileName ).toString()
+                    loadImageById(currentFileInfo)
                 }
             }
         } else if (stored.imageFilePath != "") {
@@ -313,8 +327,6 @@ class MainActivity : AppCompatActivity() {
                     )
                     intent.setDataAndType(uri, "image/*")
                     intent.putExtra("crop", "true")
-                    //intent.putExtra("aspectX", 1)
-                    //intent.putExtra("aspectY", 1)
                     intent.putExtra("output", uri)
                     intent.putExtra("return-data", false);
                     intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
@@ -329,19 +341,21 @@ class MainActivity : AppCompatActivity() {
 
             R.id.m_takeapicture -> {
                 deleteImage()
+                stored.lastIFileInfoId = -1
                 takeAPicture()
             }
 
             R.id.m_upload -> {
                 if (stored.imageFilePath != "") {
-                    val subject = DocumentSubject(1, "test")
-                    val organization = Organization(1, "Organ1", "", "")
-
-                    NetworkClient().uploadToServer(
-                        this,
-                        stored.docInfo,
-                        stored.imageFilePath
-                    )
+                    if (File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER)) {
+                        NetworkClient().updateOnServer(this, stored.lastIFileInfoId, stored.imageFilePath)
+                    } else {
+                        NetworkClient().uploadToServer(
+                            this,
+                            stored.docInfo,
+                            stored.imageFilePath
+                        )
+                    }
                 }
             }
 
@@ -435,7 +449,7 @@ class MainActivity : AppCompatActivity() {
     private inner class ScaleListener : ScaleGestureDetector.SimpleOnScaleGestureListener() {
         override fun onScale(scaleGestureDetector: ScaleGestureDetector): Boolean {
             mScaleFactor *= scaleGestureDetector.scaleFactor
-            mScaleFactor = max(0.1f, min(mScaleFactor, 10.0f))
+            mScaleFactor = max(0.5f, min(mScaleFactor, 10.0f))
             binding.imageView.scaleX = mScaleFactor
             binding.imageView.scaleY = mScaleFactor
             return true
