@@ -155,10 +155,9 @@ public class NetworkClient {
                 public void onResponse(@NonNull Call call,@NonNull Response response) {
                     Log.e("NetworkClient", response.message());
                     if (response.code() == 200) {
-                        String body = null;
                         if (response.body() != null) {
                             try {
-                                body = ((ResponseBody) response.body()).string();
+                                String body = ((ResponseBody) response.body()).string();
                                 FileInfo fileInfo = gson.fromJson(body, FileInfo.class);
                                 String newFileName = ((MainActivity) context).getIMAGENAME_FROM_SERVER() + "." + file.getName().substring(file.getName().indexOf(".") + 1);
                                 File target = new File(file.getParentFile().getAbsolutePath(), newFileName);
