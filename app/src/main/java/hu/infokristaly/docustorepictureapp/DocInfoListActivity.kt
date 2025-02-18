@@ -112,9 +112,11 @@ class DocInfoListActivity : AppCompatActivity() {
                 val intent = Intent(this, MainActivity::class.java)
                 val bundle = Bundle();
                 stored.lastIFileInfoId > -1
+                stored.imageFilePath = ""
                 val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
                 stored.saveState(this, sharedPrefs)
                 bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
+                bundle.putSerializable(getString(R.string.KEY_IMAGEPATH), "")
                 intent.putExtras(bundle);
                 activityMainLauncher.launch(intent)
             }

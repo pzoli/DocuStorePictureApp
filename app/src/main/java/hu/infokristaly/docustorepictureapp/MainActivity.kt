@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
     private var mScaleFactor = 1.0f
     private lateinit var stored: StoredItems
 
-    public final val IMAGENAME_FROM_SERVER = "IMG_FROM_SERVER"
+    val IMAGENAME_FROM_SERVER = "IMG_FROM_SERVER"
     private var toolbar: Toolbar? = null
 
     val activityCropLauncher = registerForActivityResult<Intent, ActivityResult>(
@@ -83,6 +83,14 @@ class MainActivity : AppCompatActivity() {
             binding.imageView.setImageBitmap(null)
             stored.imageFilePath = ""
         }
+    }
+
+    fun setFileInfo(fileInfo: FileInfo) {
+        stored.lastIFileInfoId = fileInfo.id!!
+    }
+
+    fun setFileName(fileName: String) {
+        stored.imageFilePath = fileName
     }
 
     fun getFileUriFromFileName(fileName: String): Uri? {
@@ -181,6 +189,8 @@ class MainActivity : AppCompatActivity() {
                 Log.e("MainActivity",e.message.toString())
             }
         }
+        else
+            binding.imageView.setImageBitmap(null)
     }
 
     fun loadImageById(fineInfo:FileInfo) {
@@ -256,7 +266,7 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         mScaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
 
-        if (intent.hasExtra(getString(R.string.KEY_DOCINFO))) {
+        if (intent.hasExtra(getString(R.string.KEY_DOCINFO)) && (stored.imageFilePath == "" || File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER))) {
             stored.docInfo =
                 intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
             if (stored.docInfo.id != null) {
@@ -342,6 +352,7 @@ class MainActivity : AppCompatActivity() {
             R.id.m_takeapicture -> {
                 deleteImage()
                 stored.lastIFileInfoId = -1
+                stored.imageFilePath = ""
                 takeAPicture()
             }
 
@@ -357,6 +368,7 @@ class MainActivity : AppCompatActivity() {
                         )
                     }
                 }
+                viewImage()
             }
 
             R.id.m_delete -> {

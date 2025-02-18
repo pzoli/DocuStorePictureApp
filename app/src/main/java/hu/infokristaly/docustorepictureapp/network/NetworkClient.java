@@ -5,10 +5,15 @@ import android.content.Intent;
 import android.util.Log;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonParser;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
@@ -19,11 +24,13 @@ import javax.net.ssl.X509TrustManager;
 import hu.infokristaly.docustorepictureapp.DocInfoActivity;
 import hu.infokristaly.docustorepictureapp.MainActivity;
 import hu.infokristaly.docustorepictureapp.model.DocInfo;
+import hu.infokristaly.docustorepictureapp.model.FileInfo;
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
+import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -141,24 +148,35 @@ public class NetworkClient {
 
             RequestBody docInfoPart = RequestBody.create(MediaType.parse("application/json"), jsonObject);
 
-            Call call = uploadAPIs.uploadImage(filePart, docInfoPart);
+            Call<ResponseBody> call = uploadAPIs.uploadImage(filePart, docInfoPart);
 
-            call.enqueue(new Callback() {
+            call.enqueue(new Callback<ResponseBody>() {
                 @Override
-                public void onResponse(Call call, Response response) {
+                public void onResponse(@NonNull Call call,@NonNull Response response) {
                     Log.e("NetworkClient", response.message());
                     if (response.code() == 200) {
-                        if (file.delete()) {
-                            Toast.makeText(context, "File successfully uploaded", Toast.LENGTH_LONG).show();
+                        String body = null;
+                        if (response.body() != null) {
+                            try {
+                                body = ((ResponseBody) response.body()).string();
+                                FileInfo fileInfo = gson.fromJson(body, FileInfo.class);
+                                String newFileName = ((MainActivity) context).getIMAGENAME_FROM_SERVER() + "." + file.getName().substring(file.getName().indexOf(".") + 1);
+                                File target = new File(file.getParentFile().getAbsolutePath(), newFileName);
+                                Files.move(file.toPath(), target.toPath());
+                                Toast.makeText(context, "File successfully uploaded", Toast.LENGTH_LONG).show();
+                                ((MainActivity) context).setFileInfo(fileInfo);
+                                ((MainActivity) context).setFileName(target.getAbsolutePath());
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
-                        ((MainActivity) context).deleteImage();
                     } else {
                         Toast.makeText(context, "File uploaded failed with code("+response.code()+")", Toast.LENGTH_LONG).show();
                     }
                 }
 
                 @Override
-                public void onFailure(Call call, Throwable t) {
+                public void onFailure(@NonNull Call call, @NonNull Throwable t) {
                     Log.e("NetworkClient", t.getLocalizedMessage());
                     Toast.makeText(context, "File uploaded failed: " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                 }
@@ -172,6 +190,7 @@ public class NetworkClient {
         try {
             String serverAddress = ApiRoutins.Companion.getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS));
             Retrofit retrofit = getRetrofitClient(context, "https://" + serverAddress);
+            Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSX").create();
 
             UploadAPIs uploadAPIs = retrofit.create(UploadAPIs.class);
 
@@ -179,24 +198,24 @@ public class NetworkClient {
             RequestBody fileReqBody = RequestBody.create(MediaType.parse("image/*"), file);
             MultipartBody.Part filePart = MultipartBody.Part.createFormData("file", file.getName(), fileReqBody);
 
-            Call call = uploadAPIs.updateImage(filePart, fileInfoId);
+            Call<ResponseBody> call = uploadAPIs.updateImage(filePart, fileInfoId);
 
-            call.enqueue(new Callback() {
+            call.enqueue(new Callback<ResponseBody>() {
                 @Override
-                public void onResponse(Call call, Response response) {
+                public void onResponse(@NonNull Call call, @NonNull Response response) {
                     Log.e("NetworkClient", response.message());
                     if (response.code() == 200) {
-                        if (file.delete()) {
-                            Toast.makeText(context, "File successfully uploaded", Toast.LENGTH_LONG).show();
+                        if (response.body() != null) {
+                            FileInfo fileInfo = gson.fromJson(response.body().toString(), FileInfo.class);
+                            Toast.makeText(context, "File ("+fileInfo.getId()+") successfully updated", Toast.LENGTH_LONG).show();
                         }
-                        ((MainActivity) context).deleteImage();
                     } else {
                         Toast.makeText(context, "File uploaded failed with code("+response.code()+")", Toast.LENGTH_LONG).show();
                     }
                 }
 
                 @Override
-                public void onFailure(Call call, Throwable t) {
+                public void onFailure(@NonNull Call<ResponseBody> call, @NonNull Throwable t) {
                     Log.e("NetworkClient", t.getLocalizedMessage());
                     Toast.makeText(context, "File uploaded failed: " + t.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                 }
