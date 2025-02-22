@@ -10,6 +10,7 @@ import androidx.annotation.NonNull;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 
 import java.io.File;
 import java.io.IOException;
@@ -165,8 +166,8 @@ public class NetworkClient {
                                 Toast.makeText(context, "File successfully uploaded", Toast.LENGTH_LONG).show();
                                 ((MainActivity) context).setFileInfo(fileInfo);
                                 ((MainActivity) context).setFileName(target.getAbsolutePath());
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
+                            } catch (JsonSyntaxException | IOException e) {
+                                Toast.makeText(context, "Upload fauled! (" + e.getLocalizedMessage() + ")", Toast.LENGTH_LONG);
                             }
                         }
                     } else {
@@ -205,8 +206,13 @@ public class NetworkClient {
                     Log.e("NetworkClient", response.message());
                     if (response.code() == 200) {
                         if (response.body() != null) {
-                            FileInfo fileInfo = gson.fromJson(response.body().toString(), FileInfo.class);
-                            Toast.makeText(context, "File ("+fileInfo.getId()+") successfully updated", Toast.LENGTH_LONG).show();
+                            try {
+                                String body = ((ResponseBody) response.body()).string();
+                                FileInfo fileInfo = gson.fromJson(body, FileInfo.class);
+                                Toast.makeText(context, "File (" + fileInfo.getId() + ") successfully updated", Toast.LENGTH_LONG).show();
+                            } catch (JsonSyntaxException | IOException e) {
+                                Toast.makeText(context, "Upload fauled! (" + e.getLocalizedMessage() + ")", Toast.LENGTH_LONG);
+                            }
                         }
                     } else {
                         Toast.makeText(context, "File uploaded failed with code("+response.code()+")", Toast.LENGTH_LONG).show();
