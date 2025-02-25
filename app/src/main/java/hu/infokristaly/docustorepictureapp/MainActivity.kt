@@ -378,6 +378,16 @@ class MainActivity : AppCompatActivity() {
             R.id.m_delete -> {
                 deleteImage()
                 deleteFromDatabase(stored.lastIFileInfoId)
+                if (fileList != null && fileList!!.isNotEmpty()) {
+                    updateFileList()
+                    val firstFileInfo = fileList!!.get(0)
+                    val fileName = "${IMAGENAME_FROM_SERVER}.${firstFileInfo.uniqueFileName.substringAfter(".")}"
+                    val storageDir =
+                        getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
+                    stored.imageFilePath = Paths.get(storageDir, fileName ).toString()
+                    stored.lastIFileInfoId = firstFileInfo.id!!
+                    loadImageById(firstFileInfo)
+                }
             }
 
             android.R.id.home -> {

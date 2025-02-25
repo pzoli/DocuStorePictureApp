@@ -162,6 +162,9 @@ public class NetworkClient {
                                 FileInfo fileInfo = gson.fromJson(body, FileInfo.class);
                                 String newFileName = ((MainActivity) context).getIMAGENAME_FROM_SERVER() + "." + file.getName().substring(file.getName().indexOf(".") + 1);
                                 File target = new File(file.getParentFile().getAbsolutePath(), newFileName);
+                                if (target.exists()) {
+                                    target.delete();
+                                }
                                 Files.move(file.toPath(), target.toPath());
                                 Toast.makeText(context, "File successfully uploaded", Toast.LENGTH_LONG).show();
                                 ((MainActivity) context).setFileInfo(fileInfo);
