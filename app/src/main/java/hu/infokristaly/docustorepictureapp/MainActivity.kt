@@ -1,26 +1,33 @@
 package hu.infokristaly.docustorepictureapp
 
+import android.animation.ObjectAnimator
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Insets
 import android.graphics.Matrix
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.DisplayMetrics
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.ScaleGestureDetector
+import android.view.WindowInsets
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import androidx.core.animation.doOnEnd
 import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -34,11 +41,11 @@ import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
 
@@ -52,7 +59,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var stored: StoredItems
 
     val IMAGENAME_FROM_SERVER = "IMG_FROM_SERVER"
+    val IMAGE_SWITCH_MARGIN = 50
+
     private var toolbar: Toolbar? = null
+    var fileList: List<FileInfo>? = null
 
     val activityCropLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
@@ -270,14 +280,14 @@ class MainActivity : AppCompatActivity() {
             stored.docInfo =
                 intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
             if (stored.docInfo.id != null) {
-                val fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo.id)
-                if (fileList.isNotEmpty()) {
-                    val fileInfo = fileList.firstOrNull {
+                fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo.id)
+                if (fileList!!.isNotEmpty()) {
+                    val fileInfo = fileList!!.firstOrNull {
                         it.id!!.equals(
                             stored.lastIFileInfoId
                         )
                     }
-                    val currentFileInfo = if (stored.lastIFileInfoId > -1 && (fileInfo != null)) fileInfo else fileList[0]
+                    val currentFileInfo = if (stored.lastIFileInfoId > -1 && (fileInfo != null)) fileInfo else fileList!![0]
                     stored.lastIFileInfoId = currentFileInfo.id!!
                     val storageDir =
                         getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
@@ -431,16 +441,30 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun getScreenWidth(activity: Activity): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val windowMetrics = activity.windowManager.currentWindowMetrics
+            val insets: Insets = windowMetrics.windowInsets
+                .getInsetsIgnoringVisibility(WindowInsets.Type.systemBars())
+            return windowMetrics.bounds.width() //- insets.left - insets.right
+        } else {
+            val displayMetrics = DisplayMetrics()
+            activity.windowManager.defaultDisplay.getMetrics(displayMetrics)
+            return displayMetrics.widthPixels
+        }
+    }
     var x: Float = 0F
     var y: Float = 0F
     var dx: Float = 0F
     var dy: Float = 0F
+    var downX: Float = 0F
 
     override fun onTouchEvent(motionEvent: MotionEvent): Boolean {
         when (motionEvent.action) {
             MotionEvent.ACTION_DOWN -> {
                 x = motionEvent.x
                 y = motionEvent.y
+                downX = binding.imageView.x
             }
 
             MotionEvent.ACTION_MOVE -> {
@@ -453,6 +477,42 @@ class MainActivity : AppCompatActivity() {
                 x = motionEvent.x
                 y = motionEvent.y
             }
+
+            MotionEvent.ACTION_UP -> {
+                val downDiff = downX - binding.imageView.x
+                if (mScaleFactor <= 1 && downDiff.absoluteValue > IMAGE_SWITCH_MARGIN && fileList != null && fileList!!.isNotEmpty()) {
+                    val fileInfo = fileList!!.firstOrNull {
+                        it.id!!.equals(
+                            stored.lastIFileInfoId
+                        )
+                    }
+                    var idx = fileList!!.indexOf(fileInfo)
+                    var isFirst = idx == 0
+                    var isLast = idx == fileList!!.size - 1
+                    if (downDiff  < 0) {
+                        idx = max(0, idx - 1)
+                    } else {
+                        idx = min(fileList!!.size - 1,idx + 1)
+                    }
+                    val width = getScreenWidth(this)
+                    var destinationX = if (downDiff < 0)  width * 1f else width * -1f
+                    if ((isFirst && destinationX > 0) || (isLast && destinationX < 0)) {
+                        destinationX = 0f
+                    }
+                    ObjectAnimator.ofFloat(binding.imageView,"x", destinationX).apply {
+                        duration = 200
+                        start()
+                    }.doOnEnd {
+                        val currentFileInfo = fileList!!.get(idx)
+                        stored.lastIFileInfoId = currentFileInfo.id!!
+                        loadImageById(currentFileInfo)
+                        downX = binding.imageView.x
+                        resetImagePosAndScale()
+                    }
+
+
+                }
+            }
         }
         mScaleGestureDetector.onTouchEvent(motionEvent)
         return true
@@ -464,6 +524,7 @@ class MainActivity : AppCompatActivity() {
             mScaleFactor = max(0.5f, min(mScaleFactor, 10.0f))
             binding.imageView.scaleX = mScaleFactor
             binding.imageView.scaleY = mScaleFactor
+            downX = binding.imageView.x
             return true
         }
     }
