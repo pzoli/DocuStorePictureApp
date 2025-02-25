@@ -2,7 +2,9 @@ package hu.infokristaly.docustorepictureapp
 
 import android.animation.ObjectAnimator
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -376,18 +378,32 @@ class MainActivity : AppCompatActivity() {
             }
 
             R.id.m_delete -> {
-                deleteImage()
-                deleteFromDatabase(stored.lastIFileInfoId)
-                if (fileList != null && fileList!!.isNotEmpty()) {
-                    updateFileList()
-                    val firstFileInfo = fileList!!.get(0)
-                    val fileName = "${IMAGENAME_FROM_SERVER}.${firstFileInfo.uniqueFileName.substringAfter(".")}"
-                    val storageDir =
-                        getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
-                    stored.imageFilePath = Paths.get(storageDir, fileName ).toString()
-                    stored.lastIFileInfoId = firstFileInfo.id!!
-                    loadImageById(firstFileInfo)
-                }
+                val alert: AlertDialog.Builder = AlertDialog.Builder(this)
+                alert.setTitle("Delete entry")
+                alert.setMessage("Are you sure you want to delete?")
+                alert.setPositiveButton(
+                    android.R.string.yes,
+                    object : DialogInterface.OnClickListener {
+                        override fun onClick(dialog: DialogInterface, which: Int) {
+                            deleteImage()
+                            deleteFromDatabase(stored.lastIFileInfoId)
+                            if (fileList != null && fileList!!.isNotEmpty()) {
+                                updateFileList()
+                                val firstFileInfo = fileList!!.get(0)
+                                val fileName = "${IMAGENAME_FROM_SERVER}.${firstFileInfo.uniqueFileName.substringAfter(".")}"
+                                val storageDir =
+                                    getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
+                                stored.imageFilePath = Paths.get(storageDir, fileName ).toString()
+                                stored.lastIFileInfoId = firstFileInfo.id!!
+                                loadImageById(firstFileInfo)
+                            }
+                        }
+                    })
+                alert.setNegativeButton(android.R.string.no,
+                    DialogInterface.OnClickListener { dialog, which -> // close dialog
+                        dialog.cancel()
+                    })
+                alert.show()
             }
 
             android.R.id.home -> {

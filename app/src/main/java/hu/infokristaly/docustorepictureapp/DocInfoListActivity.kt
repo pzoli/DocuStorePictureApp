@@ -1,6 +1,8 @@
 package hu.infokristaly.docustorepictureapp
 
+import android.app.AlertDialog
 import android.content.Context
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
@@ -99,12 +101,30 @@ class DocInfoListActivity : AppCompatActivity() {
 
         binding.btnDelete.setOnClickListener {
             if (docInfo != null) {
-                ApiRoutins.deleteDocInfo(this, docInfo!!.id!!)
-                docInfo = null
-                stored.lastIFileInfoId = -1
-                val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-                stored.saveState(this, sharedPrefs)
-                updateListView()
+                val context = this
+                val alert: AlertDialog.Builder = AlertDialog.Builder(this)
+                alert.setTitle("Delete entry")
+                alert.setMessage("Are you sure you want to delete?")
+                alert.setPositiveButton(
+                    android.R.string.ok,
+                    object : DialogInterface.OnClickListener {
+                        override fun onClick(dialog: DialogInterface, which: Int) {
+                            ApiRoutins.deleteDocInfo(context, docInfo!!.id!!)
+                            docInfo = null
+                            stored.lastIFileInfoId = -1
+                            val sharedPrefs =
+                                getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+                            stored.saveState(context, sharedPrefs)
+                            updateListView()
+                        }
+                    }
+                )
+                alert.setNegativeButton(android.R.string.cancel,
+                    DialogInterface.OnClickListener { dialog, which -> // close dialog
+                        dialog.cancel()
+                    })
+                alert.show()
+
             }
         }
 
