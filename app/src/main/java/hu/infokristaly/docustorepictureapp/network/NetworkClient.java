@@ -171,7 +171,7 @@ public class NetworkClient {
                                 ((MainActivity) context).setFileName(target.getAbsolutePath());
                                 ((MainActivity) context).updateFileList();
                             } catch (JsonSyntaxException | IOException e) {
-                                Toast.makeText(context, "Upload fauled! (" + e.getLocalizedMessage() + ")", Toast.LENGTH_LONG);
+                                Toast.makeText(context, "Upload fauled! (" + e.getLocalizedMessage() + ")", Toast.LENGTH_LONG).show();
                             }
                         }
                     } else {
@@ -215,7 +215,7 @@ public class NetworkClient {
                                 FileInfo fileInfo = gson.fromJson(body, FileInfo.class);
                                 Toast.makeText(context, "File (" + fileInfo.getId() + ") successfully updated", Toast.LENGTH_LONG).show();
                             } catch (JsonSyntaxException | IOException e) {
-                                Toast.makeText(context, "Upload fauled! (" + e.getLocalizedMessage() + ")", Toast.LENGTH_LONG);
+                                Toast.makeText(context, "Upload fauled! (" + e.getLocalizedMessage() + ")", Toast.LENGTH_LONG).show();
                             }
                         }
                     } else {
