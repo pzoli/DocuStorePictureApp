@@ -34,14 +34,15 @@ class DocInfoListActivity : AppCompatActivity() {
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             docInfo = null
-            updateListView()
         }
+        updateListView()
     }
 
     val activityMainLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
+            updateListView()
         }
     }
 

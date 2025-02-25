@@ -124,18 +124,9 @@ class MainActivity : AppCompatActivity() {
 
         return null
     }
-    fun deleteFromDatabase(file: File) {
+    fun deleteFromDatabase(fileInfoId: Long) {
         try {
-            val fileUri = getFileUriFromFileName(file.name)
-            fileUri?.let { uri ->
-                val result = contentResolver.delete(uri, null, null)
-                if (result > 0) {
-                    // success
-                } else {
-                    // fail or item not exists in database
-                }
-            }
-
+            ApiRoutins.deleteFileInfo(this, fileInfoId)
         } catch (e:Exception) {
             Log.e("MainActivity", e.message.toString())
         }
@@ -386,6 +377,7 @@ class MainActivity : AppCompatActivity() {
 
             R.id.m_delete -> {
                 deleteImage()
+                deleteFromDatabase(stored.lastIFileInfoId)
             }
 
             android.R.id.home -> {

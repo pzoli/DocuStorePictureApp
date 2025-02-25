@@ -390,6 +390,22 @@ class ApiRoutins {
             return fileInfoList
         }
 
+        fun deleteFileInfo(context: Context, fileInfoId: Long) {
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            runBlocking {
+                var result: Deferred<String> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result =
+                            deleteApiRequest(URL("https://$serverAddress/api/fileinfo/${fileInfoId}"), userName, password)
+                        return@withContext result
+                    }
+                }
+                result.await()
+            }
+        }
+
     }
 
 }

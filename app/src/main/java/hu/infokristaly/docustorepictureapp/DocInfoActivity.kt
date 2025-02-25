@@ -75,7 +75,7 @@ class DocInfoActivity : AppCompatActivity() {
 
         toolbar = findViewById(R.id.custom_appbar)
         setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayHomeAsUpEnabled(false)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         if (savedInstanceState != null) {
             stored.restoreStateFromBundle(this, savedInstanceState)
@@ -133,6 +133,10 @@ class DocInfoActivity : AppCompatActivity() {
             R.id.m_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 activitySettingsLauncher.launch(intent)
+            }
+            android.R.id.home -> {
+                super.onBackPressed()
+                return true
             }
         }
         return super.onOptionsItemSelected(item)
