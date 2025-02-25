@@ -166,6 +166,7 @@ public class NetworkClient {
                                 Toast.makeText(context, "File successfully uploaded", Toast.LENGTH_LONG).show();
                                 ((MainActivity) context).setFileInfo(fileInfo);
                                 ((MainActivity) context).setFileName(target.getAbsolutePath());
+                                ((MainActivity) context).updateFileList();
                             } catch (JsonSyntaxException | IOException e) {
                                 Toast.makeText(context, "Upload fauled! (" + e.getLocalizedMessage() + ")", Toast.LENGTH_LONG);
                             }

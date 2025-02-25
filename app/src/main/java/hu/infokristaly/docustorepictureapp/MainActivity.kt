@@ -146,6 +146,9 @@ class MainActivity : AppCompatActivity() {
 
     }
 
+    fun updateFileList() {
+        fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo.id)
+    }
     fun queryImages(fileNameParam:String) {
         val imageProjection = arrayOf(
             MediaStore.Images.Media._ID,
