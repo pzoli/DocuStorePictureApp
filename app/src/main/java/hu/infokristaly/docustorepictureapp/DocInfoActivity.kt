@@ -34,12 +34,6 @@ class DocInfoActivity : AppCompatActivity() {
     private var subjects = listOf<DocumentSubject>()
     private var toolbar: Toolbar? = null
 
-    val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result: ActivityResult? ->
-        updateAutoComplette()
-    }
-
     val activityOrganizationListLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
@@ -122,18 +116,8 @@ class DocInfoActivity : AppCompatActivity() {
         }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        val inflater = menuInflater
-        inflater.inflate(R.menu.custom_menu, menu)
-        return true
-    }
-
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
-            R.id.m_settings -> {
-                val intent = Intent(this, SettingsActivity::class.java)
-                activitySettingsLauncher.launch(intent)
-            }
             android.R.id.home -> {
                 super.onBackPressed()
                 return true

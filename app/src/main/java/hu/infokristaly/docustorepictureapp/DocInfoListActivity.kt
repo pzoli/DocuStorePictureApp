@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
+import android.view.Menu
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
@@ -30,6 +31,12 @@ class DocInfoListActivity : AppCompatActivity() {
 
     private var docInfo: DocInfo? = null
     private var docinfos = listOf<DocInfo>()
+
+    val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult? ->
+        updateListView()
+    }
 
     val activityOrganizationEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
@@ -157,8 +164,18 @@ class DocInfoListActivity : AppCompatActivity() {
         docInfo = stored.docInfo
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        val inflater = menuInflater
+        inflater.inflate(R.menu.custom_menu, menu)
+        return true
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         when (item.itemId) {
+            R.id.m_settings -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                activitySettingsLauncher.launch(intent)
+            }
             android.R.id.home -> {
                 super.onBackPressed()
                 return true
