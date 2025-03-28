@@ -81,9 +81,9 @@ class DocInfoActivity : AppCompatActivity() {
         if (stored.docInfo != null) {
             if (intent.hasExtra(getString(R.string.KEY_DOCINFO))) {
                 stored.docInfo = intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
+                stored.selectedSubject = stored.docInfo!!.subject
+                stored.selectedOrganization = stored.docInfo!!.organization
             }
-            stored.selectedSubject = stored.docInfo!!.subject
-            stored.selectedOrganization = stored.docInfo!!.organization
         }
 
         updateView()
