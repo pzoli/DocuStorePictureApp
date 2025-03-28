@@ -14,7 +14,6 @@ import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.os.bundleOf
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import hu.infokristaly.docustorepictureapp.databinding.ActivityDocinfoListBinding
@@ -38,9 +37,10 @@ class DocInfoListActivity : AppCompatActivity() {
         updateListView()
     }
 
-    val activityOrganizationEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
+    val activityDocInfoEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
-    ) { result: ActivityResult? ->
+    ) {
+        result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             docInfo = null
         }
@@ -49,7 +49,8 @@ class DocInfoListActivity : AppCompatActivity() {
 
     val activityMainLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
-    ) { result: ActivityResult? ->
+    ) {
+        result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             updateListView()
         }
@@ -93,7 +94,7 @@ class DocInfoListActivity : AppCompatActivity() {
             val bundle = Bundle();
             bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfoNew)
             intent.putExtras(bundle);
-            activityOrganizationEditorLauncher.launch(intent)
+            activityDocInfoEditorLauncher.launch(intent)
         }
 
         binding.btnModify.setOnClickListener {
@@ -102,7 +103,7 @@ class DocInfoListActivity : AppCompatActivity() {
                 val bundle = Bundle();
                 bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
                 intent.putExtras(bundle);
-                activityOrganizationEditorLauncher.launch(intent)
+                activityDocInfoEditorLauncher.launch(intent)
             }
         }
 

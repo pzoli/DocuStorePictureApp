@@ -25,4 +25,7 @@ public interface UploadAPIs
     @POST("/api/docinfo")
     Call<DocInfo> sendDocInfo(@Body DocInfo docInfo);
 
+    @PUT("/api/docinfo/{id}")
+    Call<DocInfo> updateDocInfo(@Body DocInfo docInfo, @Path("id") long id);
+
 }

@@ -14,7 +14,7 @@ class StoredItems {
 
     var imageFilePath = ""
     var lastIFileInfoId : Long = -1
-    lateinit var docInfo: DocInfo
+    var docInfo: DocInfo? = null
     var selectedOrganization: Organization? = null
     var selectedSubject: DocumentSubject? = null
 

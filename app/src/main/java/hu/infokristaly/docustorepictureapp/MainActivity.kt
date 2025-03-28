@@ -140,7 +140,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun updateFileList() {
-        fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo.id)
+        fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo!!.id)
     }
     fun queryImages(fileNameParam:String) {
         val imageProjection = arrayOf(
@@ -275,8 +275,8 @@ class MainActivity : AppCompatActivity() {
         if (intent.hasExtra(getString(R.string.KEY_DOCINFO)) && (stored.imageFilePath == "" || File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER))) {
             stored.docInfo =
                 intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
-            if (stored.docInfo.id != null) {
-                fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo.id)
+            if (stored.docInfo != null && stored.docInfo!!.id != null) {
+                fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo!!.id)
                 if (fileList!!.isNotEmpty()) {
                     val fileInfo = fileList!!.firstOrNull {
                         it.id!!.equals(

@@ -104,15 +104,19 @@ public class NetworkClient {
             Retrofit retrofit = getRetrofitClient(context, "https://" + serverAddress);
 
             UploadAPIs uploadAPIs = retrofit.create(UploadAPIs.class);
-            Call call = uploadAPIs.sendDocInfo(docInfo);
-
+            Call call = null;
+            if (docInfo.getId() != null) {
+                call = uploadAPIs.updateDocInfo(docInfo,docInfo.getId());
+            } else {
+                call = uploadAPIs.sendDocInfo(docInfo);
+            }
             call.enqueue(new Callback() {
                 @Override
                 public void onResponse(Call call, Response response) {
                     Log.e("NetworkClient", response.message());
-                    if (response.code() == 201) {
+                    if (response.code() == 200 || response.code() == 201) {
                         Toast.makeText(context, "DocInfo successfully uploaded", Toast.LENGTH_LONG).show();
-                        ((DocInfoActivity)context).stored.docInfo = ((DocInfo)response.body());
+                        ((DocInfoActivity) context).stored.setDocInfo(((DocInfo) response.body()));
                         Intent intent = new Intent(context, MainActivity.class);
                         context.startActivity(intent);
                     } else {

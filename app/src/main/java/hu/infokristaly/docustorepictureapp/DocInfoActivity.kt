@@ -78,6 +78,14 @@ class DocInfoActivity : AppCompatActivity() {
             stored.restoreFromSharedPrefs(this, sharedPrefs)
         }
 
+        if (stored.docInfo != null) {
+            if (intent.hasExtra(getString(R.string.KEY_DOCINFO))) {
+                stored.docInfo = intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
+            }
+            stored.selectedSubject = stored.docInfo!!.subject
+            stored.selectedOrganization = stored.docInfo!!.organization
+        }
+
         updateView()
 
         val serverAddress = ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_SERVERADDRESS))
@@ -92,15 +100,19 @@ class DocInfoActivity : AppCompatActivity() {
         }
         binding.btnSend.setOnClickListener {
             if (stored.selectedSubject != null && stored.selectedOrganization != null) {
-                stored.docInfo = DocInfo(
-                    null,
-                    stored.selectedSubject!!,
-                    DocumentDirection.IN,
-                    stored.selectedOrganization!!,
-                    null,
-                    Date()
-                )
-
+                if (stored.docInfo != null) {
+                    stored.docInfo!!.subject = stored.selectedSubject
+                    stored.docInfo!!.organization = stored.selectedOrganization
+                } else {
+                    stored.docInfo = DocInfo(
+                        null,
+                        stored.selectedSubject!!,
+                        DocumentDirection.IN,
+                        stored.selectedOrganization!!,
+                        null,
+                        Date()
+                    )
+                }
                 NetworkClient()
                     .sendDocInfo(this, stored.docInfo)
             }
