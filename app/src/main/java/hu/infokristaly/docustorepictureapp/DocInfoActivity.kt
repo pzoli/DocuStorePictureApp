@@ -103,6 +103,12 @@ class DocInfoActivity : AppCompatActivity() {
                 if (stored.docInfo != null) {
                     stored.docInfo!!.subject = stored.selectedSubject
                     stored.docInfo!!.organization = stored.selectedOrganization
+                    if (stored.docInfo!!.createdAt == null) {
+                        stored.docInfo!!.createdAt = Date()
+                    }
+                    if (stored.docInfo!!.direction == null) {
+                        stored.docInfo!!.direction = DocumentDirection.IN
+                    }
                 } else {
                     stored.docInfo = DocInfo(
                         null,

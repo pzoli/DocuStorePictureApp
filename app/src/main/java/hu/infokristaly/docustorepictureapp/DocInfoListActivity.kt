@@ -99,6 +99,10 @@ class DocInfoListActivity : AppCompatActivity() {
 
         binding.btnModify.setOnClickListener {
             if (docInfo != null) {
+                stored.docInfo = docInfo
+                val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+                stored.saveState(this, sharedPrefs)
+
                 val intent = Intent(this, DocInfoActivity::class.java)
                 val bundle = Bundle();
                 bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
@@ -140,10 +144,12 @@ class DocInfoListActivity : AppCompatActivity() {
             if (docInfo != null) {
                 val intent = Intent(this, MainActivity::class.java)
                 val bundle = Bundle();
-                stored.lastIFileInfoId > -1
+                stored.lastIFileInfoId = -1
                 stored.imageFilePath = ""
+                stored.docInfo = docInfo
                 val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
                 stored.saveState(this, sharedPrefs)
+
                 bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
                 bundle.putSerializable(getString(R.string.KEY_IMAGEPATH), "")
                 intent.putExtras(bundle);
