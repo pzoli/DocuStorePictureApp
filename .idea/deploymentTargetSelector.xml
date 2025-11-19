@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="DocuStorePictureApp">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-02-14T17:53:12.073179525Z">
+        <DropdownSelection timestamp="2025-11-15T08:54:17.361174083Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=HA1G8GZH" />

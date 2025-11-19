@@ -42,8 +42,10 @@ import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import java.io.File
 import java.io.IOException
+import java.nio.file.CopyOption
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -66,6 +68,9 @@ class MainActivity : AppCompatActivity() {
     private var toolbar: Toolbar? = null
     var fileList: List<FileInfo>? = null
 
+    var  photoFile: File? = null
+    var moveToTarget = true
+
     val activityCropLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
@@ -84,6 +89,48 @@ class MainActivity : AppCompatActivity() {
         } else {
             deleteImage()
         }
+    }
+
+    val activityChooseAPictreLauncher = registerForActivityResult<Intent, ActivityResult>(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult? ->
+        if (result?.resultCode == RESULT_OK) {
+            val selectedImageUri: Uri? = result.data!!.data
+            try {
+                /*
+                val selectedImageBitmap: Bitmap = MediaStore.Images.Media.getBitmap(
+                    this.contentResolver,
+                    selectedImageUri
+                )
+                binding.imageView.setImageBitmap(
+                    selectedImageBitmap
+                );
+                 */
+                val photoPath = getRealPathFromURI(selectedImageUri!!)!!
+                val target = createImageFile()
+                Files.copy(File(photoPath).toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                resetImagePosAndScale()
+                viewImage()
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        } else {
+            deleteImage()
+        }
+    }
+
+    private fun getRealPathFromURI(contentURI: Uri): String? {
+        val result: String?
+        val cursor = contentResolver.query(contentURI, null, null, null, null)
+        if (cursor == null) { // Source is Dropbox or other similar local file path
+            result = contentURI.path
+        } else {
+            cursor.moveToFirst()
+            val idx = cursor.getColumnIndex(MediaStore.Images.ImageColumns.DATA)
+            result = cursor.getString(idx)
+            cursor.close()
+        }
+        return result
     }
 
     fun deleteImage() {
@@ -175,22 +222,26 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun correctOrientationByExif(myBitmap:  Bitmap): Bitmap? {
+        try {
+            val exif = ExifInterface(File(stored.imageFilePath))
+            val orientation = exif!!.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+            return rotateBitmap(myBitmap, orientation)
+        } catch (e: IOException) {
+            e.printStackTrace()
+            return null
+        }
+
+    }
     private fun viewImage() {
         if (stored.imageFilePath != "") {
             try {
                 val myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
-                var bmRotated = myBitmap
-                try {
-                    val exif = ExifInterface(File(stored.imageFilePath))
-                    val orientation = exif!!.getAttributeInt(
-                        ExifInterface.TAG_ORIENTATION,
-                        ExifInterface.ORIENTATION_UNDEFINED
-                    )
-                    bmRotated = rotateBitmap(myBitmap, orientation)
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-                binding.imageView.setImageBitmap(bmRotated)
+                binding.imageView.setImageBitmap(correctOrientationByExif(myBitmap))
             } catch (e:Exception) {
                 Log.e("MainActivity",e.message.toString())
             }
@@ -204,7 +255,7 @@ class MainActivity : AppCompatActivity() {
         try {
             val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
             Files.write(Paths.get(stored.imageFilePath), byteArray)
-            binding.imageView.setImageBitmap(bmp)
+            binding.imageView.setImageBitmap(correctOrientationByExif(bmp))
         } catch (e:Exception) {
             Log.e("MainActivity",e.message.toString())
         }
@@ -362,6 +413,10 @@ class MainActivity : AppCompatActivity() {
                 takeAPicture()
             }
 
+            R.id.m_choosepicture -> {
+                chooseAPicture()
+            }
+
             R.id.m_upload -> {
                 if (stored.imageFilePath != "") {
                     if (File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER)) {
@@ -415,7 +470,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takeAPicture() {
-        var photoFile: File? = null
+        photoFile = null
+        moveToTarget = false
         try {
             photoFile = createImageFile();
         } catch (ex: IOException) {
@@ -426,7 +482,7 @@ class MainActivity : AppCompatActivity() {
 
             val author = "${packageName}.provider"
             try {
-                val photoURI: Uri = FileProvider.getUriForFile(this, author, photoFile);
+                val photoURI: Uri = FileProvider.getUriForFile(this, author, photoFile!!);
                 cameraIntent.putExtra(
                     MediaStore.EXTRA_OUTPUT,
                     photoURI
@@ -438,6 +494,18 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    private fun chooseAPicture() {
+        try {
+            val i = Intent()
+            i.setType("image/*")
+            i.setAction(Intent.ACTION_GET_CONTENT)
+            activityChooseAPictreLauncher.launch(i)
+        } catch (ex: Exception) {
+            Log.e("MainActivity", ex.message.toString())
+        }
+    }
+
 
     fun resetImagePosAndScale() {
         x = 0F

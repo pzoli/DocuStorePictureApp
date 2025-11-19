@@ -3,6 +3,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/m_choosepicture"
+        android:icon="@drawable/baseline_folder_open_24"
+        android:iconTint="#FFFFFF"
+        android:title="Choose a picture"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/m_takeapicture"
         android:icon="@drawable/baseline_add_a_photo_24"
         android:title="Take a picture"
