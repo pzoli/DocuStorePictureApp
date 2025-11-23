@@ -42,13 +42,13 @@ import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import java.io.File
 import java.io.IOException
-import java.nio.file.CopyOption
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.Optional
 import kotlin.math.absoluteValue
 import kotlin.math.max
 import kotlin.math.min
@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
     val IMAGE_SWITCH_MARGIN = 50
 
     private var toolbar: Toolbar? = null
-    var fileList: List<FileInfo>? = null
+    var fileList: Optional<List<FileInfo>> = Optional.of(listOf())
 
     var  photoFile: File? = null
     var moveToTarget = true
@@ -177,6 +177,7 @@ class MainActivity : AppCompatActivity() {
         try {
             ApiRoutins.deleteFileInfo(this, fileInfoId)
         } catch (e:Exception) {
+            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
             Log.e("MainActivity", e.message.toString())
         }
     }
@@ -187,7 +188,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun updateFileList() {
-        fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo!!.id)
+        try {
+            fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo!!.id)
+        } catch (e:Exception) {
+            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+        }
     }
     fun queryImages(fileNameParam:String) {
         val imageProjection = arrayOf(
@@ -251,13 +256,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun loadImageById(fineInfo:FileInfo) {
-        val byteArray = ApiRoutins.getImage(this, fineInfo.id!!)
-        try {
-            val bmp = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
-            Files.write(Paths.get(stored.imageFilePath), byteArray)
-            binding.imageView.setImageBitmap(correctOrientationByExif(bmp))
+        try{
+            val byteArray = ApiRoutins.getImage(this, fineInfo.id!!)
+            if (byteArray.isPresent) {
+                try {
+                    val bmp = BitmapFactory.decodeByteArray(byteArray.get(), 0, byteArray.get().size)
+                    Files.write(Paths.get(stored.imageFilePath), byteArray.get())
+                    binding.imageView.setImageBitmap(correctOrientationByExif(bmp))
+                } catch (e: Exception) {
+                    Log.e("MainActivity", e.message.toString())
+                }
+            }
         } catch (e:Exception) {
-            Log.e("MainActivity",e.message.toString())
+            Toast.makeText(this,e.message,Toast.LENGTH_LONG).show()
         }
     }
 
@@ -327,20 +338,27 @@ class MainActivity : AppCompatActivity() {
             stored.docInfo =
                 intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
             if (stored.docInfo != null && stored.docInfo!!.id != null) {
-                fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo!!.id)
-                if (fileList!!.isNotEmpty()) {
-                    val fileInfo = fileList!!.firstOrNull {
-                        it.id!!.equals(
-                            stored.lastIFileInfoId
-                        )
+                try {
+                    fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo!!.id)
+                    if (fileList.isPresent && fileList.get().isNotEmpty()) {
+                        val fileInfo = fileList.get().firstOrNull {
+                            it.id!!.equals(
+                                stored.lastIFileInfoId
+                            )
+                        }
+                        val currentFileInfo =
+                            if (stored.lastIFileInfoId > -1 && (fileInfo != null)) fileInfo else fileList.get()[0]
+                        stored.lastIFileInfoId = currentFileInfo.id!!
+                        val storageDir =
+                            getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
+                        val fileName = IMAGENAME_FROM_SERVER + ".${
+                            currentFileInfo.uniqueFileName.substringAfter(".")
+                        }"
+                        stored.imageFilePath = Paths.get(storageDir, fileName).toString()
+                        loadImageById(currentFileInfo)
                     }
-                    val currentFileInfo = if (stored.lastIFileInfoId > -1 && (fileInfo != null)) fileInfo else fileList!![0]
-                    stored.lastIFileInfoId = currentFileInfo.id!!
-                    val storageDir =
-                        getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
-                    val fileName = IMAGENAME_FROM_SERVER + ".${currentFileInfo.uniqueFileName.substringAfter(".")}"
-                    stored.imageFilePath = Paths.get(storageDir, fileName ).toString()
-                    loadImageById(currentFileInfo)
+                } catch (e:Exception) {
+                    Toast.makeText(this,e.message,Toast.LENGTH_LONG).show()
                 }
             }
         } else if (stored.imageFilePath != "") {
@@ -442,9 +460,9 @@ class MainActivity : AppCompatActivity() {
                         override fun onClick(dialog: DialogInterface, which: Int) {
                             deleteImage()
                             deleteFromDatabase(stored.lastIFileInfoId)
-                            if (fileList != null && fileList!!.isNotEmpty()) {
+                            if (fileList.isPresent && fileList.get().isNotEmpty()) {
                                 updateFileList()
-                                val firstFileInfo = fileList!!.get(0)
+                                val firstFileInfo = fileList.get().get(0)
                                 val fileName = "${IMAGENAME_FROM_SERVER}.${firstFileInfo.uniqueFileName.substringAfter(".")}"
                                 val storageDir =
                                     getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
@@ -569,19 +587,19 @@ class MainActivity : AppCompatActivity() {
 
             MotionEvent.ACTION_UP -> {
                 val downDiff = downX - binding.imageView.x
-                if (mScaleFactor <= 1 && downDiff.absoluteValue > IMAGE_SWITCH_MARGIN && fileList != null && fileList!!.isNotEmpty()) {
-                    val fileInfo = fileList!!.firstOrNull {
+                if (mScaleFactor <= 1 && downDiff.absoluteValue > IMAGE_SWITCH_MARGIN && fileList.isPresent && fileList.get().isNotEmpty()) {
+                    val fileInfo = fileList.get().firstOrNull {
                         it.id!!.equals(
                             stored.lastIFileInfoId
                         )
                     }
-                    var idx = fileList!!.indexOf(fileInfo)
+                    var idx = fileList.get().indexOf(fileInfo)
                     var isFirst = idx == 0
-                    var isLast = idx == fileList!!.size - 1
+                    var isLast = idx == fileList.get().size - 1
                     if (downDiff  < 0) {
                         idx = max(0, idx - 1)
                     } else {
-                        idx = min(fileList!!.size - 1,idx + 1)
+                        idx = min(fileList.get().size - 1,idx + 1)
                     }
                     val width = getScreenWidth(this)
                     var destinationX = if (downDiff < 0)  width * 1f else width * -1f
@@ -592,7 +610,7 @@ class MainActivity : AppCompatActivity() {
                         duration = 200
                         start()
                     }.doOnEnd {
-                        val currentFileInfo = fileList!!.get(idx)
+                        val currentFileInfo = fileList.get().get(idx)
                         stored.lastIFileInfoId = currentFileInfo.id!!
                         loadImageById(currentFileInfo)
                         downX = binding.imageView.x

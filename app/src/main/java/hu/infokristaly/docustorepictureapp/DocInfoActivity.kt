@@ -24,14 +24,15 @@ import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 import java.util.Date
+import java.util.Optional
 
 
 class DocInfoActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDocInfoBinding
     lateinit var stored: StoredItems
 
-    private var organizations = listOf<Organization>()
-    private var subjects = listOf<DocumentSubject>()
+    private var organizations: Optional<List<Organization>> = Optional.of(listOf())
+    private var subjects: Optional<List<DocumentSubject>> = Optional.of(listOf())
     private var toolbar: Toolbar? = null
 
     val activityOrganizationListLauncher = registerForActivityResult<Intent, ActivityResult>(
@@ -150,13 +151,25 @@ class DocInfoActivity : AppCompatActivity() {
     }
 
     private fun updateAutoComplette() {
-        organizations = ApiRoutins.getOrganizations(this)
+        try {
+            organizations = ApiRoutins.getOrganizations(this)
+        } catch (e:Exception) {
+            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+            organizations = Optional.of(listOf())
+        }
+
+        try {
+            subjects = ApiRoutins.getSubjects(this)
+        } catch (e:Exception) {
+            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+            subjects = Optional.of(listOf())
+        }
 
         binding.actOrganization.setAdapter(
             ArrayAdapter(
                 this,
                 android.R.layout.simple_dropdown_item_1line,
-                organizations
+                organizations.get()
             )
         )
         binding.actOrganization.dropDownWidth = android.view.ViewGroup.LayoutParams.MATCH_PARENT
@@ -172,12 +185,11 @@ class DocInfoActivity : AppCompatActivity() {
                 ).show()
             }
 
-        subjects = ApiRoutins.getSubjects(this)
         binding.actSubject.setAdapter(
             ArrayAdapter(
                 this,
                 android.R.layout.simple_dropdown_item_1line,
-                subjects
+                subjects.get()
             )
         )
         binding.actSubject.dropDownWidth = android.view.ViewGroup.LayoutParams.MATCH_PARENT

@@ -7,6 +7,7 @@ data class Organization(
     var name: String,
     var hqAddress: String,
     var hqPhone: String,
+    var version: Long?
 
 ) : Serializable {
     override fun toString(): String {

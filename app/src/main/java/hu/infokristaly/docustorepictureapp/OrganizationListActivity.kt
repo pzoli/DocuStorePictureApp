@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,19 +26,20 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.net.URL
+import java.util.Optional
 
 class OrganizationListActivity : AppCompatActivity() {
     private lateinit var binding: ActivityOrganizationListBinding
     private lateinit var appbar: Toolbar
 
-    private var organization: Organization? = null
-    private var organizations = listOf<Organization>()
+    private var organization: Optional<Organization> = Optional.empty()
+    private var organizations: Optional<List<Organization>> = Optional.of(listOf())
 
     val activityOrganizationEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            organization = null
+            organization = Optional.empty()
             updateListView()
         }
     }
@@ -45,6 +47,8 @@ class OrganizationListActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val self = this
 
         binding = ActivityOrganizationListBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -56,7 +60,7 @@ class OrganizationListActivity : AppCompatActivity() {
         }
 
         if (savedInstanceState?.getSerializable(getString(R.string.KEY_ORGANIZATION)) != null) {
-            organization = savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) as Organization
+            organization = Optional.of(savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) as Organization)
         }
         appbar = findViewById(R.id.custom_appbar)
         setSupportActionBar(appbar)
@@ -66,12 +70,12 @@ class OrganizationListActivity : AppCompatActivity() {
 
         binding.lvOrganizations.onItemClickListener =
             AdapterView.OnItemClickListener { parent, view, position, id ->
-                organization = organizations.get(position)
+                organization = Optional.of(organizations.get().get(position))
             }
 
         binding.btnNew.setOnClickListener {
             val intent = Intent(this, OrganizationEditorActivity::class.java)
-            val organizationNew = Organization(null,"","", "")
+            val organizationNew = Organization(null,"","", "", 0)
             val bundle = Bundle();
             bundle.putSerializable(getString(R.string.KEY_ORGANIZATION), organizationNew)
             intent.putExtras(bundle);
@@ -79,28 +83,32 @@ class OrganizationListActivity : AppCompatActivity() {
         }
 
         binding.btnModify.setOnClickListener {
-            if (organization != null) {
+            if (organization.isPresent) {
                 val intent = Intent(this, OrganizationEditorActivity::class.java)
                 val bundle = Bundle();
-                bundle.putSerializable(getString(R.string.KEY_ORGANIZATION), organization)
+                bundle.putSerializable(getString(R.string.KEY_ORGANIZATION), organization.get())
                 intent.putExtras(bundle);
                 activityOrganizationEditorLauncher.launch(intent)
             }
         }
 
         binding.btnDelete.setOnClickListener {
-            if (organization != null) {
-                ApiRoutins.deleteOrganization(this, organization!!.id!!)
-                organization = null
-                updateListView()
+            if (organization.isPresent) {
+                try {
+                    ApiRoutins.deleteOrganization(this, organization.get().id!!)
+                    organization = Optional.empty()
+                    updateListView()
+                } catch (e:Exception) {
+                    Toast.makeText(self,e.toString(),Toast.LENGTH_LONG).show()
+                }
             }
         }
 
         binding.btnSelect.setOnClickListener { it ->
-            if (organization != null) {
+            if (organization.isPresent) {
                 val i = Intent()
                 val bundle = Bundle();
-                bundle.putSerializable(getString(R.string.KEY_ORGANIZATION), organization)
+                bundle.putSerializable(getString(R.string.KEY_ORGANIZATION), organization.get())
                 i.putExtras(bundle);
                 setResult(RESULT_OK, i)
                 finish()
@@ -109,15 +117,20 @@ class OrganizationListActivity : AppCompatActivity() {
     }
 
     private fun updateListView() {
-        organizations = ApiRoutins.getOrganizations(this)
-        binding.lvOrganizations.adapter = OrganizationAdapter(this, organizations)
+        try {
+            organizations = ApiRoutins.getOrganizations(this)
+        } catch (e:Exception) {
+            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+            organizations = Optional.of(listOf())
+        }
+        binding.lvOrganizations.adapter = OrganizationAdapter(this, organizations.get())
         binding.lvOrganizations.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         if (savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) != null) {
-            organization = savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) as Organization
+            organization = Optional.of(savedInstanceState.getSerializable(getString(R.string.KEY_ORGANIZATION)) as Organization)
         }
     }
 
@@ -133,7 +146,9 @@ class OrganizationListActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        outState.putSerializable(getString(R.string.KEY_ORGANIZATION), organization)
+        if (organization.isPresent) {
+            outState.putSerializable(getString(R.string.KEY_ORGANIZATION), organization.get())
+        }
     }
 
 }

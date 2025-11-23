@@ -3,6 +3,7 @@ package hu.infokristaly.docustorepictureapp
 import android.content.Intent
 import android.os.Bundle
 import android.view.MenuItem
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -48,10 +49,19 @@ class SubjectEditorActivity : AppCompatActivity() {
             val serverAddress = ApiRoutins.getSharedPrefProp(this,getString(R.string.KEY_SERVERADDRESS))
             val gson = Gson()
             val subjectJson = gson.toJson(subject)
-            ApiRoutins.postPutSubject(this,"https://$serverAddress/api/subject" + if (subject.id!=null) "/${subject.id}"  else "",if (subject.id == null) "POST" else "PUT", subjectJson)
-            val i = Intent()
-            setResult(RESULT_OK, i)
-            finish()
+            try {
+                ApiRoutins.postPutSubject(
+                    this,
+                    "https://$serverAddress/api/subject" + if (subject.id != null) "/${subject.id}" else "",
+                    if (subject.id == null) "POST" else "PUT",
+                    subjectJson
+                )
+                val i = Intent()
+                setResult(RESULT_OK, i)
+                finish()
+            } catch (e:Exception) {
+                Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+            }
         }
     }
 

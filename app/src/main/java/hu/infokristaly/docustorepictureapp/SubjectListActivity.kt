@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,20 +17,21 @@ import hu.infokristaly.docustorepictureapp.databinding.ActivitySubjectListBindin
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.SubjectAdapter
 import hu.infokristaly.docustorepictureapp.model.DocumentSubject
+import java.util.Optional
 
 class SubjectListActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySubjectListBinding
     private lateinit var appbar: Toolbar
 
-    private var subject: DocumentSubject? = null
-    private var subjects = listOf<DocumentSubject>()
+    private var subject: Optional<DocumentSubject> = Optional.empty()
+    private var subjects: Optional<List<DocumentSubject>> = Optional.of(listOf())
 
     val activitySubjectEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            subject = null
+            subject = Optional.empty()
             updateListView()
         }
     }
@@ -47,6 +49,7 @@ class SubjectListActivity : AppCompatActivity() {
             insets
         }
 
+        val self = this
         appbar = findViewById(R.id.custom_appbar)
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -55,7 +58,7 @@ class SubjectListActivity : AppCompatActivity() {
 
         binding.lvSubjects.onItemClickListener =
             AdapterView.OnItemClickListener { parent, view, position, id ->
-                subject = subjects.get(position)
+                subject = Optional.of(subjects.get().get(position))
             }
 
         binding.btnNew.setOnClickListener {
@@ -68,20 +71,20 @@ class SubjectListActivity : AppCompatActivity() {
         }
 
         binding.btnModify.setOnClickListener {
-            if (subject != null) {
+            if (subject.isPresent) {
                 val intent = Intent(this, SubjectEditorActivity::class.java)
                 val bundle = Bundle();
-                bundle.putSerializable(getString(R.string.KEY_SUBJECT), subject)
+                bundle.putSerializable(getString(R.string.KEY_SUBJECT), subject.get())
                 intent.putExtras(bundle);
                 activitySubjectEditorLauncher.launch(intent)
             }
         }
 
         binding.btnSelect.setOnClickListener { it ->
-            if (subject != null) {
+            if (subject.isPresent) {
                 val i = Intent()
                 val bundle = Bundle();
-                bundle.putSerializable(getString(R.string.KEY_SUBJECT), subject)
+                bundle.putSerializable(getString(R.string.KEY_SUBJECT), subject.get())
                 i.putExtras(bundle);
                 setResult(RESULT_OK, i)
                 finish()
@@ -89,17 +92,26 @@ class SubjectListActivity : AppCompatActivity() {
         }
 
         binding.btnDelete.setOnClickListener {
-            if (subject != null) {
-                ApiRoutins.deleteSubject(this, subject?.id!!)
-                subject = null
-                updateListView()
+            if (subject.isPresent) {
+                try {
+                    ApiRoutins.deleteSubject(this, subject.get().id!!)
+                    subject = Optional.empty()
+                    updateListView()
+                } catch (e:Exception) {
+                    Toast.makeText(self,e.toString(),Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
 
     private fun updateListView() {
-        subjects = ApiRoutins.getSubjects(this)
-        binding.lvSubjects.adapter = SubjectAdapter(this, subjects)
+        try {
+            subjects = ApiRoutins.getSubjects(this)
+        } catch (e:Exception) {
+            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+            subjects = Optional.of(listOf())
+        }
+        binding.lvSubjects.adapter = SubjectAdapter(this, subjects.get())
         binding.lvSubjects.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
     }
 

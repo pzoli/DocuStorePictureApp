@@ -9,6 +9,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,12 +17,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
 import hu.infokristaly.docustorepictureapp.databinding.ActivityDocinfoListBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.DocInfoAdapter
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import java.text.SimpleDateFormat
+import java.util.Optional
+
 
 class DocInfoListActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDocinfoListBinding
@@ -29,7 +33,7 @@ class DocInfoListActivity : AppCompatActivity() {
     private lateinit var stored: StoredItems
 
     private var docInfo: DocInfo? = null
-    private var docinfos = listOf<DocInfo>()
+    private var docinfos: Optional<List<DocInfo>> = Optional.of(listOf())
 
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
@@ -85,7 +89,7 @@ class DocInfoListActivity : AppCompatActivity() {
 
         binding.lvDocInfos.onItemClickListener =
             AdapterView.OnItemClickListener { parent, view, position, id ->
-                docInfo = docinfos.get(position)
+                docInfo = if( docinfos!!.isPresent) docinfos!!.get().get(position) else null
             }
 
         binding.btnNew.setOnClickListener {
@@ -117,17 +121,22 @@ class DocInfoListActivity : AppCompatActivity() {
                 val alert: AlertDialog.Builder = AlertDialog.Builder(this)
                 alert.setTitle("Delete entry")
                 alert.setMessage("Are you sure you want to delete?")
+                val self = this
                 alert.setPositiveButton(
                     android.R.string.ok,
                     object : DialogInterface.OnClickListener {
                         override fun onClick(dialog: DialogInterface, which: Int) {
-                            ApiRoutins.deleteDocInfo(context, docInfo!!.id!!)
-                            docInfo = null
-                            stored.lastIFileInfoId = -1
-                            val sharedPrefs =
-                                getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-                            stored.saveState(context, sharedPrefs)
-                            updateListView()
+                            try {
+                                ApiRoutins.deleteDocInfo(context, docInfo!!.id!!)
+                                docInfo = null
+                                stored.lastIFileInfoId = -1
+                                val sharedPrefs =
+                                    getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+                                stored.saveState(context, sharedPrefs)
+                                updateListView()
+                            } catch (e:Exception) {
+                                Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
+                            }
                         }
                     }
                 )
@@ -156,12 +165,20 @@ class DocInfoListActivity : AppCompatActivity() {
                 activityMainLauncher.launch(intent)
             }
         }
+        binding.swipeRefreshLayout.setOnRefreshListener(OnRefreshListener {
+            updateListView()
+            binding.swipeRefreshLayout.setRefreshing(false)
+        })
     }
 
     private fun updateListView() {
         val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-        docinfos = ApiRoutins.getDocInfos(this)
-        binding.lvDocInfos.adapter = DocInfoAdapter(this, docinfos)
+        try {
+            docinfos = ApiRoutins.getDocInfos(this)
+        } catch (e:Exception) {
+            Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show()
+        }
+        binding.lvDocInfos.adapter = DocInfoAdapter(this, if (docinfos.isPresent) docinfos.get() else listOf())
         binding.lvDocInfos.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
     }
 
