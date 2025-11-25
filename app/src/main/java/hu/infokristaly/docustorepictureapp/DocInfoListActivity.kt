@@ -94,7 +94,7 @@ class DocInfoListActivity : AppCompatActivity() {
 
         binding.btnNew.setOnClickListener {
             val intent = Intent(this, DocInfoActivity::class.java)
-            val docInfoNew = DocInfo(null, null,null, null, null, null)
+            val docInfoNew = DocInfo(null, null,null, null, null, null, null, null)
             val bundle = Bundle();
             bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfoNew)
             intent.putExtras(bundle);

@@ -14,6 +14,8 @@ data class DocInfo (
     var organization: Organization?,
     var clerk: Clerk?,
     var createdAt: Date?,
+    var comment: String?,
+    var docLocation: DocLocation?,
 ) : Serializable {
     override fun toString(): String {
         return subject.toString() + organization.toString()

@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import android.widget.BaseAdapter
 import android.widget.TextView
 import hu.infokristaly.docustorepictureapp.model.DocInfo
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class DocInfoAdapter(private val context: Context, private val data: List<DocInfo>?): BaseAdapter() {
     override fun getCount(): Int = data!!.size
@@ -18,7 +20,8 @@ class DocInfoAdapter(private val context: Context, private val data: List<DocInf
     override fun getView(position: Int, convertView: View?, parent: ViewGroup?): View {
         val view = convertView ?: LayoutInflater.from(context).inflate(android.R.layout.simple_list_item_single_choice, parent, false)
         val docInfo = data!![position]
-        (view as TextView).text = "${docInfo.createdAt?.toString()} - ${docInfo.organization?.name} - ${docInfo.subject?.value}"
+        val formatedCreatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm").format(docInfo.createdAt!!)
+        (view as TextView).text = "${formatedCreatedAt} - ${docInfo.organization?.name} - ${docInfo.subject?.value} - ${docInfo.comment}"
         return view
     }
 

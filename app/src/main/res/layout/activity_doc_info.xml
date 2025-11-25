@@ -40,23 +40,62 @@
         app:layout_constraintTop_toBottomOf="@+id/actOrganization" />
 
     <Button
+        android:id="@+id/btnOrganization"
+        android:layout_width="60dp"
+        android:layout_height="45dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="72dp"
+        android:text=">"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/actOrganization"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
         android:id="@+id/btnSubject"
         android:layout_width="60dp"
         android:layout_height="47dp"
+        android:layout_marginStart="6dp"
         android:layout_marginTop="4dp"
         android:text=">"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@+id/actSubject"
         app:layout_constraintTop_toBottomOf="@+id/btnOrganization" />
 
     <Button
-        android:id="@+id/btnOrganization"
+        android:id="@+id/btnDatePicker"
         android:layout_width="60dp"
-        android:layout_height="45dp"
-        android:layout_marginTop="72dp"
+        android:layout_height="47dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="56dp"
         android:text=">"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/actOrganization"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/etDatePicker"
+        app:layout_constraintTop_toBottomOf="@+id/btnOrganization" />
+
+    <EditText
+        android:id="@+id/etDatePicker"
+        android:layout_width="275dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:inputType="date"
+        android:textAlignment="center"
+        android:hint="Keletkezés dátuma"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/actSubject" />
+
+    <EditText
+        android:id="@+id/etComment"
+        android:layout_width="275dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:textAlignment="center"
+        android:hint="Kommentár"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etDatePicker" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

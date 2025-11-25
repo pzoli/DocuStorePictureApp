@@ -1,8 +1,10 @@
 package hu.infokristaly.docustorepictureapp
 
+import android.app.DatePickerDialog
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.AdapterView.OnItemClickListener
@@ -17,13 +19,17 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import hu.infokristaly.docustorepictureapp.databinding.ActivityDocInfoBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
+import hu.infokristaly.docustorepictureapp.model.DocLocation
 import hu.infokristaly.docustorepictureapp.model.DocumentDirection
 import hu.infokristaly.docustorepictureapp.model.Organization
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
 import hu.infokristaly.docustorepictureapp.model.DocumentSubject
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 import java.util.Optional
 
 
@@ -60,6 +66,7 @@ class DocInfoActivity : AppCompatActivity() {
 
         stored = StoredItems()
         binding = ActivityDocInfoBinding.inflate(layoutInflater)
+        val self = this
         setContentView(binding.root)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
@@ -81,7 +88,8 @@ class DocInfoActivity : AppCompatActivity() {
 
         if (stored.docInfo != null) {
             if (intent.hasExtra(getString(R.string.KEY_DOCINFO))) {
-                stored.docInfo = intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
+                stored.docInfo =
+                    intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
                 stored.selectedSubject = stored.docInfo!!.subject
                 stored.selectedOrganization = stored.docInfo!!.organization
             }
@@ -89,7 +97,8 @@ class DocInfoActivity : AppCompatActivity() {
 
         updateView()
 
-        val serverAddress = ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_SERVERADDRESS))
+        val serverAddress =
+            ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_SERVERADDRESS))
         val userName = ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_USERNAME))
         val password = ApiRoutins.getSharedPrefProp(this, getString(R.string.KEY_PASSWORD))
 
@@ -99,29 +108,66 @@ class DocInfoActivity : AppCompatActivity() {
         } else {
             updateAutoComplette()
         }
+
+        val myCalendar = Calendar.getInstance()
+
+        val datePicker = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
+            myCalendar.set(Calendar.YEAR, year)
+            myCalendar.set(Calendar.MONTH, month)
+            myCalendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            updateLabel(myCalendar) // Updates TextView with the selected date
+        }
+
+        binding.btnDatePicker.setOnClickListener {
+            if (stored.docInfo!!.createdAt !== null) {
+                myCalendar.setTime(stored.docInfo!!.createdAt!!)
+            }
+            val year = myCalendar.get(Calendar.YEAR)
+            val month = myCalendar.get(Calendar.MONTH)
+            val day = myCalendar.get(Calendar.DAY_OF_MONTH)
+            DatePickerDialog(
+                self,
+                datePicker,
+                year,
+                month,
+                day
+            ).show()
+        }
+
         binding.btnSend.setOnClickListener {
             if (stored.selectedSubject != null && stored.selectedOrganization != null) {
-                if (stored.docInfo != null) {
-                    stored.docInfo!!.subject = stored.selectedSubject
-                    stored.docInfo!!.organization = stored.selectedOrganization
-                    if (stored.docInfo!!.createdAt == null) {
-                        stored.docInfo!!.createdAt = Date()
+                try {
+                    if (stored.docInfo != null) {
+                        stored.docInfo!!.subject = stored.selectedSubject
+                        stored.docInfo!!.organization = stored.selectedOrganization
+                        if (binding.etDatePicker.text.isEmpty()) {
+                            stored.docInfo!!.createdAt = Date()
+                        } else {
+                            stored.docInfo!!.createdAt =
+                                SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
+                                    .parse(binding.etDatePicker.text.toString())
+                        }
+                        if (stored.docInfo!!.direction == null) {
+                            stored.docInfo!!.direction = DocumentDirection.IN
+                        }
+                        stored.docInfo!!.comment = binding.etComment.text.toString()
+                    } else {
+                        stored.docInfo = DocInfo(
+                            null,
+                            stored.selectedSubject!!,
+                            DocumentDirection.IN,
+                            stored.selectedOrganization!!,
+                            null,
+                            stored.docInfo!!.createdAt,
+                            stored.docInfo!!.comment,
+                            null
+                        )
                     }
-                    if (stored.docInfo!!.direction == null) {
-                        stored.docInfo!!.direction = DocumentDirection.IN
-                    }
-                } else {
-                    stored.docInfo = DocInfo(
-                        null,
-                        stored.selectedSubject!!,
-                        DocumentDirection.IN,
-                        stored.selectedOrganization!!,
-                        null,
-                        Date()
-                    )
+                    NetworkClient()
+                        .sendDocInfo(this, stored.docInfo)
+                } catch (e: Exception) {
+                    Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
                 }
-                NetworkClient()
-                    .sendDocInfo(this, stored.docInfo)
             }
         }
         binding.btnSubject.setOnClickListener {
@@ -133,6 +179,15 @@ class DocInfoActivity : AppCompatActivity() {
             activityOrganizationListLauncher.launch(intent)
 
         }
+    }
+
+    private fun updateLabel(calendar: Calendar) {
+        val myFormat = "yyyy-MM-dd" // Define the date format
+        val sdf = SimpleDateFormat(
+            myFormat,
+            Locale.ENGLISH
+        )
+        binding.etDatePicker.setText(sdf.format(calendar.time))
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -148,20 +203,30 @@ class DocInfoActivity : AppCompatActivity() {
     private fun updateView() {
         binding.actSubject.setText(stored.selectedSubject?.value)
         binding.actOrganization.setText(stored.selectedOrganization?.name)
+        try {
+            binding.etDatePicker.setText(
+                SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(
+                    stored.docInfo!!.createdAt
+                )
+            )
+        } catch (e: Exception) {
+            Log.e("Exception", e.toString())
+        }
+        binding.etComment.setText(stored.docInfo!!.comment)
     }
 
     private fun updateAutoComplette() {
         try {
             organizations = ApiRoutins.getOrganizations(this)
-        } catch (e:Exception) {
-            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show()
             organizations = Optional.of(listOf())
         }
 
         try {
             subjects = ApiRoutins.getSubjects(this)
-        } catch (e:Exception) {
-            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show()
             subjects = Optional.of(listOf())
         }
 
