@@ -34,16 +34,22 @@ class ApiRoutins {
         fun getSharedPrefProp(context: Context, key: String): String {
             val prefFile = "${context.packageName}_preferences"
             val sharedPreferences = context.getSharedPreferences(prefFile, Context.MODE_PRIVATE)
-            val result = sharedPreferences.getString(key , "") ?: ""
+            val result = sharedPreferences.getString(key, "") ?: ""
             return result
         }
 
         fun getTrustManager(): X509TrustManager {
             return object : X509TrustManager {
-                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                override fun checkClientTrusted(
+                    chain: Array<out X509Certificate>?,
+                    authType: String?
+                ) {
                 }
 
-                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {
+                override fun checkServerTrusted(
+                    chain: Array<out X509Certificate>?,
+                    authType: String?
+                ) {
                 }
 
                 override fun getAcceptedIssuers(): Array<X509Certificate> {
@@ -51,6 +57,7 @@ class ApiRoutins {
                 }
             }
         }
+
         fun getSSLContext(): SSLContext {
             val trustManager = getTrustManager()
             val sslContext = SSLContext.getInstance("SSL")
@@ -61,13 +68,15 @@ class ApiRoutins {
         fun getHostnameVerifier(): HostnameVerifier {
             return HostnameVerifier { _, _ -> true }
         }
-        fun getApiRequest(url: URL, userName: String, password:String): String {
+
+        fun getApiRequest(url: URL, userName: String, password: String): String {
             val sslContext = getSSLContext()
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
             HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
             var result = ""
             val userCredentials = "$userName:$password"
-            val basicAuth = "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
+            val basicAuth =
+                "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
             val conn = url.openConnection() as HttpURLConnection
             with(conn) {
                 requestMethod = "GET"
@@ -85,13 +94,18 @@ class ApiRoutins {
             return result;
         }
 
-        fun getApiRequestAsByteArrayResult(url: URL, userName: String, password:String): ByteArray {
+        fun getApiRequestAsByteArrayResult(
+            url: URL,
+            userName: String,
+            password: String
+        ): ByteArray {
             val sslContext = getSSLContext()
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
             HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
             var result = ByteArray(0)
             val userCredentials = "$userName:$password"
-            val basicAuth = "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
+            val basicAuth =
+                "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
             val conn = url.openConnection() as HttpURLConnection
             with(conn) {
                 requestMethod = "GET"
@@ -105,10 +119,11 @@ class ApiRoutins {
         }
 
 
-        private fun deleteApiRequest(url: URL, userName: String, password:String): String {
+        private fun deleteApiRequest(url: URL, userName: String, password: String): String {
             var result = ""
             val userCredentials = "$userName:$password"
-            val basicAuth = "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
+            val basicAuth =
+                "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
             val sslContext = getSSLContext()
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
             HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
@@ -127,10 +142,17 @@ class ApiRoutins {
             return result;
         }
 
-        fun postPutApiRequest(url: URL, method: String, jsonInputString: String, userName: String, password:String): String {
+        fun postPutApiRequest(
+            url: URL,
+            method: String,
+            jsonInputString: String,
+            userName: String,
+            password: String
+        ): String {
             var result = ""
             val userCredentials = "$userName:$password"
-            val basicAuth = "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
+            val basicAuth =
+                "Basic " + String(Base64.getEncoder().encode(userCredentials.toByteArray()))
             val sslContext = getSSLContext()
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.socketFactory)
             HttpsURLConnection.setDefaultHostnameVerifier(getHostnameVerifier())
@@ -161,18 +183,24 @@ class ApiRoutins {
             var subjectList: Optional<List<DocumentSubject>> = Optional.empty()
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             runBlocking {
                 var result: Deferred<String?> = async() {
                     withContext(Dispatchers.IO) {
-                        val result = getApiRequest(URL("https://$serverAddress/api/subject"),userName,password)
+                        val result = getApiRequest(
+                            URL("https://$serverAddress/api/subject"),
+                            userName,
+                            password
+                        )
                         return@withContext result
                     }
                 }
                 val subjectsResult = result.await()
                 val gson = Gson()
                 val itemType = object : TypeToken<List<DocumentSubject>>() {}.type
-                subjectList = Optional.of(gson.fromJson<List<DocumentSubject>>(subjectsResult, itemType))
+                subjectList =
+                    Optional.of(gson.fromJson<List<DocumentSubject>>(subjectsResult, itemType))
             }
             return subjectList
         }
@@ -180,14 +208,16 @@ class ApiRoutins {
         fun deleteSubject(context: Context, id: Long) {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             runBlocking {
                 var result: Deferred<String?> = async() {
                     withContext(Dispatchers.IO) {
                         val result = deleteApiRequest(
                             URL("https://$serverAddress/api/subject/$id"),
                             userName,
-                            password)
+                            password
+                        )
                         return@withContext result
                     }
                 }
@@ -195,21 +225,26 @@ class ApiRoutins {
             }
         }
 
-        fun postPutSubject(context: Context, url: String, method: String, jsonString: String): Optional<DocumentSubject> {
+        fun postPutSubject(
+            context: Context,
+            url: String,
+            method: String,
+            jsonString: String
+        ): Optional<DocumentSubject> {
             var subject: Optional<DocumentSubject> = Optional.empty()
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
             runBlocking {
                 var result: Deferred<String?> = async() {
                     withContext(Dispatchers.IO) {
-                            val result = postPutApiRequest(
-                                URL(url),
-                                method,
-                                jsonString,
-                                userName,
-                                password
-                            )
-                            return@withContext result
+                        val result = postPutApiRequest(
+                            URL(url),
+                            method,
+                            jsonString,
+                            userName,
+                            password
+                        )
+                        return@withContext result
                     }
                 }
                 val subjectResult = result.await()
@@ -222,7 +257,8 @@ class ApiRoutins {
         fun getOrganizations(context: Context): Optional<List<Organization>> {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             var organizationList: Optional<List<Organization>> = Optional.empty()
             runBlocking {
                 var result: Deferred<String?> = async() {
@@ -248,7 +284,8 @@ class ApiRoutins {
         fun deleteOrganization(context: Context, id: Long) {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             runBlocking {
                 var result: Deferred<String?> = async() {
                     withContext(Dispatchers.IO) {
@@ -265,7 +302,12 @@ class ApiRoutins {
             }
         }
 
-        fun postPutOrganization(context: Context,url: String, method: String, jsonString: String): Optional<Organization> {
+        fun postPutOrganization(
+            context: Context,
+            url: String,
+            method: String,
+            jsonString: String
+        ): Optional<Organization> {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
 
@@ -285,7 +327,8 @@ class ApiRoutins {
                 }
                 val organizationResult = result.await()
                 val gson = Gson()
-                organization = Optional.of(gson.fromJson(organizationResult, Organization::class.java))
+                organization =
+                    Optional.of(gson.fromJson(organizationResult, Organization::class.java))
             }
             return organization
         }
@@ -293,17 +336,18 @@ class ApiRoutins {
         fun deleteDocInfo(context: Context, id: Long) {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             runBlocking {
                 var result: Deferred<String?> = async() {
                     withContext(Dispatchers.IO) {
-                            val result =
-                                deleteApiRequest(
-                                    URL("https://$serverAddress/api/docinfo/$id"),
-                                    userName,
-                                    password
-                                )
-                            return@withContext result
+                        val result =
+                            deleteApiRequest(
+                                URL("https://$serverAddress/api/docinfo/$id"),
+                                userName,
+                                password
+                            )
+                        return@withContext result
                     }
                 }
                 result.await()
@@ -311,17 +355,19 @@ class ApiRoutins {
         }
 
         @Throws(Exception::class)
-        fun getDocInfos(context: Context): Optional<List<DocInfo>> {
-            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
-            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+        fun getDocInfos(
+            userName: String,
+            password: String,
+            serverAddress: String,
+            page: Int
+        ): Optional<List<DocInfo>> {
             var docInfoList: Optional<List<DocInfo>> = Optional.empty()
             runBlocking {
                 var result: Deferred<String?> = async() {
                     withContext(Dispatchers.IO) {
                         val result =
                             getApiRequest(
-                                URL("https://$serverAddress/api/docinfo"),
+                                URL("https://$serverAddress/api/docinfo/page/"+page),
                                 userName,
                                 password
                             )
@@ -340,11 +386,12 @@ class ApiRoutins {
         fun getImage(context: Context, id: Long): Optional<ByteArray> {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             var imageResult: ByteArray
             runBlocking {
                 var result: Deferred<ByteArray> = async() {
-                withContext(Dispatchers.IO) {
+                    withContext(Dispatchers.IO) {
                         val result =
                             getApiRequestAsByteArrayResult(
                                 URL("https://$serverAddress/api/file/" + id.toString()),
@@ -362,7 +409,8 @@ class ApiRoutins {
         fun getFileInfosForDocInfo(context: Context, id: Long?): Optional<List<FileInfo>> {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             var fileInfoList: Optional<List<FileInfo>> = Optional.empty()
             runBlocking {
                 var result: Deferred<String?> = async() {
@@ -388,7 +436,8 @@ class ApiRoutins {
         fun deleteFileInfo(context: Context, fileInfoId: Long) {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
-            val serverAddress = getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
             runBlocking {
                 var result: Deferred<String?> = async() {
                     withContext(Dispatchers.IO) {

@@ -7,8 +7,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.AdapterView
-import android.widget.ListView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
@@ -17,52 +15,72 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
 import hu.infokristaly.docustorepictureapp.databinding.ActivityDocinfoListBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
-import hu.infokristaly.docustorepictureapp.utils.DocInfoAdapter
+import hu.infokristaly.docustorepictureapp.utils.ApiRoutins.Companion.getSharedPrefProp
+import hu.infokristaly.docustorepictureapp.utils.ItemAdapter
+import hu.infokristaly.docustorepictureapp.utils.ItemViewModel
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
-import java.text.SimpleDateFormat
-import java.util.Optional
 
 
 class DocInfoListActivity : AppCompatActivity() {
     private lateinit var binding: ActivityDocinfoListBinding
     private lateinit var appbar: Toolbar
     private lateinit var stored: StoredItems
+    private lateinit var viewModel: ItemViewModel
+    private lateinit var adapter: ItemAdapter
+
+    private val selectedDocInfos: MutableList<DocInfo> = mutableListOf()
 
     private var docInfo: DocInfo? = null
-    private var docinfos: Optional<List<DocInfo>> = Optional.of(listOf())
+    var selectedPositions: MutableList<Int> = mutableListOf()
 
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
-        updateListView()
+        updateSettings()
+        updateRecyclerView()
     }
 
     val activityDocInfoEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
-    ) {
-        result: ActivityResult? ->
-        if (result?.resultCode == RESULT_OK) {
-            docInfo = null
-        }
-        updateListView()
+    ) { result: ActivityResult? ->
+//        if (result?.resultCode == RESULT_OK) {
+//        }
+        docInfo = null
+        updateRecyclerView()
     }
 
     val activityMainLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
-    ) {
-        result: ActivityResult? ->
+    ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            updateListView()
+            updateRecyclerView()
         }
+    }
+
+    private fun updateRecyclerView() {
+        selectedPositions.clear()
+        selectedDocInfos.clear()
+
+        viewModel.currentPage = 1
+        viewModel.items.value = listOf()
+        viewModel.loadNextPage()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val self = this
+
+        viewModel = ViewModelProvider(this).get(ItemViewModel::class.java)
+        updateSettings()
 
         binding = ActivityDocinfoListBinding.inflate(layoutInflater)
         setContentView(binding.root)
@@ -75,26 +93,54 @@ class DocInfoListActivity : AppCompatActivity() {
 
         stored = StoredItems()
         if (savedInstanceState != null) {
-            stored.restoreStateFromBundle(this,savedInstanceState)
+            stored.restoreStateFromBundle(this, savedInstanceState)
         } else {
             val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-            stored.restoreFromSharedPrefs(this,sharedPrefs)
+            stored.restoreFromSharedPrefs(this, sharedPrefs)
         }
 
         appbar = findViewById(R.id.custom_appbar)
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
-        updateListView()
+        val layoutManager = binding.lvDocInfos.layoutManager as LinearLayoutManager
+        adapter = ItemAdapter(emptyList(),::isPositionSelected)
+        binding.lvDocInfos.adapter = adapter
+        viewModel.items.observe(this) { newItems ->
+            adapter.updateItems(newItems)
+        }
+        adapter.onItemClickListener = ::onSelectItem
+        adapter.onItemLongClickListener = ::onTouchItem
+        binding.lvDocInfos.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
 
-        binding.lvDocInfos.onItemClickListener =
-            AdapterView.OnItemClickListener { parent, view, position, id ->
-                docInfo = if( docinfos!!.isPresent) docinfos!!.get().get(position) else null
+                val visibleItemCount = layoutManager.childCount
+                val totalItemCount = layoutManager.itemCount
+                val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+
+                // Ha már nincs több adat, ne töltsön be
+                // if (isLastPage) return
+
+                // A betöltést akkor indítjuk el, ha görgettünk, és a lista végéhez közelítünk
+                if (dy > 0) { // Csak lefelé görgetéskor
+                    // A küszöbérték (threshold): Akkor kezdje el a betöltést, ha már csak 5 elem maradt
+                    val threshold = 5
+                    if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - threshold) {
+                        viewModel.loadNextPage()
+                    }
+                }
             }
+        })
+
+        // Első betöltés elindítása
+        if (viewModel.items.value.isNullOrEmpty()) {
+            viewModel.loadNextPage()
+        }
 
         binding.btnNew.setOnClickListener {
             val intent = Intent(this, DocInfoActivity::class.java)
-            val docInfoNew = DocInfo(null, null,null, null, null, null, null, null)
+            val docInfoNew = DocInfo(null, null, null, null, null, null, null, null)
             val bundle = Bundle();
             bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfoNew)
             intent.putExtras(bundle);
@@ -133,8 +179,7 @@ class DocInfoListActivity : AppCompatActivity() {
                                 val sharedPrefs =
                                     getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
                                 stored.saveState(context, sharedPrefs)
-                                updateListView()
-                            } catch (e:Exception) {
+                            } catch (e: Exception) {
                                 Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
                             }
                         }
@@ -166,25 +211,58 @@ class DocInfoListActivity : AppCompatActivity() {
             }
         }
         binding.swipeRefreshLayout.setOnRefreshListener(OnRefreshListener {
-            updateListView()
+            updateRecyclerView()
             binding.swipeRefreshLayout.setRefreshing(false)
         })
     }
 
-    private fun updateListView() {
-        val simpleDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-        try {
-            docinfos = ApiRoutins.getDocInfos(this)
-        } catch (e:Exception) {
-            Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show()
+    private fun updateSettings() {
+        viewModel.userName = getSharedPrefProp(this, this.getString(R.string.KEY_USERNAME))
+        viewModel.password = getSharedPrefProp(this, this.getString(R.string.KEY_PASSWORD))
+        viewModel.serverAddress =
+            getSharedPrefProp(this, this.getString(R.string.KEY_SERVERADDRESS))
+    }
+
+    fun onSelectItem(docInfo: DocInfo, position: Int): Boolean {
+        if (selectedPositions.contains(position)) {
+            selectedPositions.remove(position)
+        } else {
+            selectedPositions.add(position)
         }
-        binding.lvDocInfos.adapter = DocInfoAdapter(this, if (docinfos.isPresent) docinfos.get() else listOf())
-        binding.lvDocInfos.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        var isSelected = false
+        var selectedItem = selectedDocInfos.firstOrNull({ item -> docInfo.equals(item) })
+        if (selectedItem != null) {
+            selectedDocInfos.remove(selectedItem)
+        } else {
+            selectedDocInfos.add(docInfo)
+            isSelected = true
+        }
+        this.docInfo = if (isSelected) docInfo else null
+        return isSelected
+    }
+
+    fun onTouchItem(docInfo: DocInfo, position: Int): Boolean {
+        selectedDocInfos.clear()
+        selectedDocInfos.add(docInfo)
+        this.docInfo = docInfo
+        selectedPositions.forEach{pos ->
+            if (pos != position) {
+                adapter.notifyItemChanged(pos)
+            }
+        }
+        selectedPositions.clear()
+        selectedPositions.add(position)
+
+        return true
+    }
+
+    private fun isPositionSelected(position: Int): Boolean {
+        return selectedPositions.contains(position)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        stored.restoreStateFromBundle(this,savedInstanceState)
+        stored.restoreStateFromBundle(this, savedInstanceState)
         docInfo = stored.docInfo
     }
 
@@ -200,6 +278,7 @@ class DocInfoListActivity : AppCompatActivity() {
                 val intent = Intent(this, SettingsActivity::class.java)
                 activitySettingsLauncher.launch(intent)
             }
+
             android.R.id.home -> {
                 super.onBackPressed()
                 return true
@@ -210,19 +289,19 @@ class DocInfoListActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        stored.saveInstanceState(this,outState)
+        stored.saveInstanceState(this, outState)
     }
 
     override fun onPause() {
         super.onPause()
         val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-        stored.saveState(this,sharedPrefs)
+        stored.saveState(this, sharedPrefs)
     }
 
     override fun onStop() {
         super.onStop()
         val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-        stored.saveState(this,sharedPrefs)
+        stored.saveState(this, sharedPrefs)
     }
 
 }

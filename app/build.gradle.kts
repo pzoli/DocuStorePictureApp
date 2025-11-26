@@ -59,6 +59,7 @@ dependencies {
     implementation("androidx.camera:camera-view:1.1.0")
     implementation("commons-io:commons-io:2.18.0")
     implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
+    implementation("androidx.recyclerview:recyclerview:1.2.1")
 
     testImplementation(libs.junit)
 
