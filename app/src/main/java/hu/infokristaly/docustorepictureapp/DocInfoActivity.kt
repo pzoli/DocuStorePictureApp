@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.Menu
 import android.view.MenuItem
 import android.widget.AdapterView.OnItemClickListener
 import android.widget.ArrayAdapter
@@ -56,6 +55,15 @@ class DocInfoActivity : AppCompatActivity() {
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             stored.selectedSubject = result.data?.getSerializableExtra("subject") as DocumentSubject
+            updateView()
+        }
+    }
+
+    val docLocationLauncher = registerForActivityResult<Intent, ActivityResult>(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result: ActivityResult? ->
+        if (result?.resultCode == RESULT_OK) {
+            stored.selectedLocation = result.data?.getSerializableExtra("location") as DocLocation
             updateView()
         }
     }
@@ -119,7 +127,7 @@ class DocInfoActivity : AppCompatActivity() {
         }
 
         binding.btnDatePicker.setOnClickListener {
-            if (stored.docInfo!!.createdAt !== null) {
+            if (stored.docInfo != null && stored.docInfo!!.createdAt !== null) {
                 myCalendar.setTime(stored.docInfo!!.createdAt!!)
             }
             val year = myCalendar.get(Calendar.YEAR)
@@ -132,6 +140,11 @@ class DocInfoActivity : AppCompatActivity() {
                 month,
                 day
             ).show()
+        }
+
+        binding.btnLocation.setOnClickListener {
+            val intent = Intent(this, DocLocationActivity::class.java)
+            docLocationLauncher.launch(intent)
         }
 
         binding.btnSend.setOnClickListener {
@@ -151,6 +164,8 @@ class DocInfoActivity : AppCompatActivity() {
                             stored.docInfo!!.direction = DocumentDirection.IN
                         }
                         stored.docInfo!!.comment = binding.etComment.text.toString()
+                        stored.docInfo!!.docLocation = stored.selectedLocation
+
                     } else {
                         stored.docInfo = DocInfo(
                             null,
@@ -158,9 +173,10 @@ class DocInfoActivity : AppCompatActivity() {
                             DocumentDirection.IN,
                             stored.selectedOrganization!!,
                             null,
-                            stored.docInfo!!.createdAt,
-                            stored.docInfo!!.comment,
-                            null
+                            SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
+                                .parse(binding.etDatePicker.text.toString()),
+                            binding.etComment.text.toString(),
+                            stored.selectedLocation
                         )
                     }
                     NetworkClient()
@@ -203,16 +219,19 @@ class DocInfoActivity : AppCompatActivity() {
     private fun updateView() {
         binding.actSubject.setText(stored.selectedSubject?.value)
         binding.actOrganization.setText(stored.selectedOrganization?.name)
-        try {
-            binding.etDatePicker.setText(
-                SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(
-                    stored.docInfo!!.createdAt
+        binding.etLocation.setText(stored.selectedLocation?.name)
+        if (stored.docInfo != null) {
+            binding.etComment.setText(stored.docInfo!!.comment)
+            try {
+                binding.etDatePicker.setText(
+                    SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH).format(
+                        stored.docInfo!!.createdAt
+                    )
                 )
-            )
-        } catch (e: Exception) {
-            Log.e("Exception", e.toString())
+            } catch (e: Exception) {
+                Log.e("Exception", e.toString())
+            }
         }
-        binding.etComment.setText(stored.docInfo!!.comment)
     }
 
     private fun updateAutoComplette() {

@@ -7,16 +7,38 @@ import android.util.Log
 import com.google.gson.Gson
 import hu.infokristaly.docustorepictureapp.R
 import hu.infokristaly.docustorepictureapp.model.DocInfo
+import hu.infokristaly.docustorepictureapp.model.DocLocation
 import hu.infokristaly.docustorepictureapp.model.Organization
 import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 
 class StoredItems {
 
+    var selectedLocation: DocLocation? = null
     var imageFilePath = ""
     var lastIFileInfoId : Long = -1
     var docInfo: DocInfo? = null
     var selectedOrganization: Organization? = null
     var selectedSubject: DocumentSubject? = null
+
+    fun getSerializedLocation(): String {
+        val gson = Gson()
+        var serializedLocation = ""
+        try {
+            serializedLocation = gson.toJson(selectedLocation)
+        } catch (e: Exception) {
+            Log.e("Error", e.message.toString())
+        }
+        return serializedLocation
+    }
+
+    fun getLocationFromJSON(docInfoJson: String) {
+        val gson = Gson()
+        try {
+            selectedLocation = gson.fromJson(docInfoJson, DocLocation::class.java)
+        } catch (e: Exception) {
+            Log.e("Error", e.message.toString())
+        }
+    }
 
     fun getSerializedDocInfo(): String {
         val gson = Gson()
@@ -86,6 +108,8 @@ class StoredItems {
         outState.putString(context.getString(R.string.KEY_SELECTEDORGANIZATION), serializedOrganization)
         val serializeSubject = getSerializedSubject()
         outState.putString(context.getString(R.string.KEY_SELECTEDSUBJECT), serializeSubject)
+        val serializeLocation = getSerializedLocation()
+        outState.putString(context.getString(R.string.KEY_SELECTEDLOCATION), serializeLocation)
         outState.putLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID), lastIFileInfoId)
     }
 
@@ -95,6 +119,7 @@ class StoredItems {
             getDocInfoFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_DOCINFO)) ?: "")
             getSubjectFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_SELECTEDSUBJECT))?: "")
             getOrganizationFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_SELECTEDORGANIZATION))?:"")
+            getLocationFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_SELECTEDLOCATION))?:"")
             lastIFileInfoId = savedInstanceState.getLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID))
         }
     }
@@ -104,6 +129,7 @@ class StoredItems {
         getDocInfoFromJSON(sharedPrefs.getString(context.getString(R.string.KEY_DOCINFO), "") ?: "")
         getSubjectFromJSON(sharedPrefs.getString(context.getString(R.string.KEY_SELECTEDSUBJECT),"")?: "")
         getOrganizationFromJSON(sharedPrefs.getString(context.getString(R.string.KEY_SELECTEDORGANIZATION),"")?:"")
+        getLocationFromJSON(sharedPrefs.getString(context.getString(R.string.KEY_SELECTEDLOCATION),"")?:"")
         lastIFileInfoId = sharedPrefs.getLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID),-1)
     }
 
@@ -113,6 +139,7 @@ class StoredItems {
             .putString(context.getString(R.string.KEY_DOCINFO), getSerializedDocInfo())
             .putString(context.getString(R.string.KEY_SELECTEDSUBJECT), getSerializedSubject())
             .putString(context.getString(R.string.KEY_SELECTEDORGANIZATION), getSerializedOrganization())
+            .putString(context.getString(R.string.KEY_SELECTEDLOCATION), getSerializedLocation())
             .putLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID), lastIFileInfoId)
             .apply()
     }

@@ -139,6 +139,13 @@ class DocInfoListActivity : AppCompatActivity() {
         }
 
         binding.btnNew.setOnClickListener {
+            stored.docInfo = null
+            stored.selectedLocation = null
+            stored.selectedOrganization = null
+            stored.selectedSubject = null
+            val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+            stored.saveState(this, sharedPrefs)
+
             val intent = Intent(this, DocInfoActivity::class.java)
             val docInfoNew = DocInfo(null, null, null, null, null, null, null, null)
             val bundle = Bundle();
@@ -150,6 +157,9 @@ class DocInfoListActivity : AppCompatActivity() {
         binding.btnModify.setOnClickListener {
             if (docInfo != null) {
                 stored.docInfo = docInfo
+                stored.selectedLocation = docInfo!!.docLocation
+                stored.selectedOrganization = docInfo!!.organization
+                stored.selectedSubject = docInfo!!.subject
                 val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
                 stored.saveState(this, sharedPrefs)
 
@@ -179,6 +189,7 @@ class DocInfoListActivity : AppCompatActivity() {
                                 val sharedPrefs =
                                     getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
                                 stored.saveState(context, sharedPrefs)
+                                updateRecyclerView()
                             } catch (e: Exception) {
                                 Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
                             }

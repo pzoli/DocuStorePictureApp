@@ -19,7 +19,7 @@
         app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/etComment"
-        app:layout_constraintVertical_bias="0.103" />
+        app:layout_constraintVertical_bias="0.224" />
 
     <AutoCompleteTextView
         android:id="@+id/actOrganization"
@@ -78,6 +78,18 @@
         app:layout_constraintStart_toEndOf="@+id/etDatePicker"
         app:layout_constraintTop_toBottomOf="@+id/btnOrganization" />
 
+    <Button
+        android:id="@+id/btnLocation"
+        android:layout_width="60dp"
+        android:layout_height="47dp"
+        android:layout_marginStart="4dp"
+        android:layout_marginTop="152dp"
+        android:text=">"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@+id/etLocation"
+        app:layout_constraintTop_toBottomOf="@+id/btnOrganization" />
+
     <EditText
         android:id="@+id/etDatePicker"
         android:layout_width="275dp"
@@ -100,5 +112,16 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/etDatePicker" />
+
+    <EditText
+        android:id="@+id/etLocation"
+        android:layout_width="275dp"
+        android:layout_height="48dp"
+        android:ems="10"
+        android:textAlignment="center"
+        android:hint="Lokáció"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etComment" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

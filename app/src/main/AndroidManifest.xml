@@ -8,7 +8,8 @@
         android:name="android.hardware.camera"
         android:required="true" />
 
-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
+    <uses-permission
+        android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -25,6 +26,12 @@
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
         <activity
+            android:name=".LocationEditorActivity"
+            android:exported="false" />
+        <activity
+            android:name=".DocLocationActivity"
+            android:exported="false" />
+        <activity
             android:name=".SubjectEditorActivity"
             android:exported="false" />
         <activity
@@ -38,8 +45,7 @@
             android:exported="false" />
         <activity
             android:name=".DocInfoActivity"
-            android:exported="true">
-        </activity>
+            android:exported="true" />
         <activity
             android:name=".DocInfoListActivity"
             android:exported="true">
@@ -66,7 +72,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
-
     </application>
 
 </manifest>

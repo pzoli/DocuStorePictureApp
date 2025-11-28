@@ -60,6 +60,9 @@ dependencies {
     implementation("commons-io:commons-io:2.18.0")
     implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
+    implementation("io.github.amrdeveloper:treeview:1.2.0")
+    implementation(libs.androidx.navigation.fragment.ktx)
+    implementation(libs.androidx.navigation.ui.ktx)
 
     testImplementation(libs.junit)
 

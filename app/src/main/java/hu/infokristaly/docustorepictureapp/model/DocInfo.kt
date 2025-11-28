@@ -18,6 +18,6 @@ data class DocInfo (
     var docLocation: DocLocation?,
 ) : Serializable {
     override fun toString(): String {
-        return subject.toString() + organization.toString()
+        return subject.toString() + " - " + organization.toString()
     }
 }

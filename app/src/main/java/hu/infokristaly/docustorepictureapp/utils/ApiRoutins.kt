@@ -2,11 +2,11 @@ package hu.infokristaly.docustorepictureapp.utils
 
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import hu.infokristaly.docustorepictureapp.R
 import hu.infokristaly.docustorepictureapp.model.DocInfo
+import hu.infokristaly.docustorepictureapp.model.DocLocation
 import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 import hu.infokristaly.docustorepictureapp.model.FileInfo
 import hu.infokristaly.docustorepictureapp.model.Organization
@@ -331,6 +331,83 @@ class ApiRoutins {
                     Optional.of(gson.fromJson(organizationResult, Organization::class.java))
             }
             return organization
+        }
+
+        fun getLocations(context: Context, parentId: Long): Optional<List<DocLocation>> {
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            var locationList: Optional<List<DocLocation>> = Optional.empty()
+            runBlocking {
+                var result: Deferred<String?> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result =
+                            getApiRequest(
+                                URL("https://$serverAddress/api/doclocation/parent/"+parentId),
+                                userName,
+                                password
+                            )
+                        return@withContext result
+                    }
+                }
+                val locationResult = result.await()
+                val gson = Gson()
+                val itemType = object : TypeToken<List<DocLocation>>() {}.type
+                locationList =
+                    Optional.of(gson.fromJson(locationResult, itemType))
+            }
+            return locationList
+        }
+
+        fun postPutLocation(
+            context: Context,
+            url: String,
+            method: String,
+            jsonString: String
+        ): Optional<DocLocation> {
+            var docLocation: Optional<DocLocation> = Optional.empty()
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            runBlocking {
+                var result: Deferred<String?> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result = postPutApiRequest(
+                            URL(url),
+                            method,
+                            jsonString,
+                            userName,
+                            password
+                        )
+                        return@withContext result
+                    }
+                }
+                val locationResult = result.await()
+                val gson = Gson()
+                docLocation = Optional.of(gson.fromJson(locationResult, DocLocation::class.java))
+            }
+            return docLocation
+        }
+
+        fun deleteLocation(context: Context, id: Long) {
+            val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
+            val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))
+            val serverAddress =
+                getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS))
+            runBlocking {
+                var result: Deferred<String?> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result =
+                            deleteApiRequest(
+                                URL("https://$serverAddress/api/doclocation/$id"),
+                                userName,
+                                password
+                            )
+                        return@withContext result
+                    }
+                }
+                result.await()
+            }
         }
 
         fun deleteDocInfo(context: Context, id: Long) {

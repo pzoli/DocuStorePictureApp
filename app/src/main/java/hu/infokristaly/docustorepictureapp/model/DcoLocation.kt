@@ -7,4 +7,7 @@ data class DocLocation(
     var name: String?,
     var parent: DocLocation?,
     ) : Serializable {
+    override fun toString(): String {
+        return name!!
+    }
 }

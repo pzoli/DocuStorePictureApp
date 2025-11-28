@@ -15,4 +15,6 @@
     <string name="KEY_ORGANIZATION">organization</string>
     <string name="KEY_SUBJECT">subject</string>
     <string name="KEY_LAST_VIEWED_FILEINFO_ID">lastfileinfoid</string>
+    <string name="KEY_SELECTEDLOCATION">selectedLocation</string>
+    <string name="KEY_LOCATION">location</string>
 </resources>
