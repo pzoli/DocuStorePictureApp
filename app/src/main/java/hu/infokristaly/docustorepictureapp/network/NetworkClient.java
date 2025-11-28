@@ -12,6 +12,8 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,6 +29,8 @@ import hu.infokristaly.docustorepictureapp.MainActivity;
 import hu.infokristaly.docustorepictureapp.model.DocInfo;
 import hu.infokristaly.docustorepictureapp.model.FileInfo;
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins;
+import kotlin.Unit;
+import kotlin.jvm.functions.Function0;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -98,7 +102,7 @@ public class NetworkClient {
         return retrofit;
     }
 
-    public void sendDocInfo(Context context, DocInfo docInfo) {
+    public void sendDocInfo(Context context, DocInfo docInfo, @NotNull Function0<Unit> redirect) {
         try {
             String serverAddress = ApiRoutins.Companion.getSharedPrefProp(context, context.getString(R.string.KEY_SERVERADDRESS));
             Retrofit retrofit = getRetrofitClient(context, "https://" + serverAddress);
@@ -117,8 +121,7 @@ public class NetworkClient {
                     if (response.code() == 200 || response.code() == 201) {
                         Toast.makeText(context, "DocInfo successfully uploaded", Toast.LENGTH_LONG).show();
                         ((DocInfoActivity) context).stored.setDocInfo(((DocInfo) response.body()));
-                        Intent intent = new Intent(context, MainActivity.class);
-                        context.startActivity(intent);
+                        redirect.invoke();
                     } else {
                         Toast.makeText(context, "DocInfo upload with response code " + response.code(), Toast.LENGTH_LONG).show();
                     }

@@ -10,16 +10,16 @@
     <include layout="@layout/custom_appbar"/>
 
     <Button
-        android:id="@+id/btnSend"
+        android:id="@+id/btnSendAndPictures"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Send"
+        android:text="Mentés és képek"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.498"
+        app:layout_constraintHorizontal_bias="0.78"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/etComment"
-        app:layout_constraintVertical_bias="0.224" />
+        app:layout_constraintVertical_bias="0.233" />
 
     <AutoCompleteTextView
         android:id="@+id/actOrganization"
@@ -115,13 +115,25 @@
 
     <EditText
         android:id="@+id/etLocation"
-        android:layout_width="275dp"
-        android:layout_height="48dp"
+        android:layout_width="273dp"
+        android:layout_height="85dp"
         android:ems="10"
-        android:textAlignment="center"
         android:hint="Lokáció"
+        android:textAlignment="center"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/etComment" />
+
+    <Button
+        android:id="@+id/btnSendAndBack"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="76dp"
+        android:text="Mentés"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@+id/btnSendAndPictures"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/etComment"
+        app:layout_constraintVertical_bias="0.233" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -104,7 +104,7 @@ class DocInfoListActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
         val layoutManager = binding.lvDocInfos.layoutManager as LinearLayoutManager
-        adapter = ItemAdapter(emptyList(),::isPositionSelected)
+        adapter = ItemAdapter(emptyList(), ::isPositionSelected)
         binding.lvDocInfos.adapter = adapter
         viewModel.items.observe(this) { newItems ->
             adapter.updateItems(newItems)
@@ -140,14 +140,15 @@ class DocInfoListActivity : AppCompatActivity() {
 
         binding.btnNew.setOnClickListener {
             stored.docInfo = null
-            stored.selectedLocation = null
+            // stored.selectedLocation = null // Sticky location
             stored.selectedOrganization = null
             stored.selectedSubject = null
             val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
             stored.saveState(this, sharedPrefs)
 
             val intent = Intent(this, DocInfoActivity::class.java)
-            val docInfoNew = DocInfo(null, null, null, null, null, null, null, null)
+            val docInfoNew =
+                DocInfo(null, null, null, null, null, null, null, stored.selectedLocation) // sticky location
             val bundle = Bundle();
             bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfoNew)
             intent.putExtras(bundle);
@@ -256,7 +257,7 @@ class DocInfoListActivity : AppCompatActivity() {
         selectedDocInfos.clear()
         selectedDocInfos.add(docInfo)
         this.docInfo = docInfo
-        selectedPositions.forEach{pos ->
+        selectedPositions.forEach { pos ->
             if (pos != position) {
                 adapter.notifyItemChanged(pos)
             }

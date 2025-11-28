@@ -20,11 +20,11 @@ import hu.infokristaly.docustorepictureapp.databinding.ActivityDocInfoBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.model.DocLocation
 import hu.infokristaly.docustorepictureapp.model.DocumentDirection
+import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 import hu.infokristaly.docustorepictureapp.model.Organization
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
-import hu.infokristaly.docustorepictureapp.model.DocumentSubject
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -147,44 +147,11 @@ class DocInfoActivity : AppCompatActivity() {
             docLocationLauncher.launch(intent)
         }
 
-        binding.btnSend.setOnClickListener {
-            if (stored.selectedSubject != null && stored.selectedOrganization != null) {
-                try {
-                    if (stored.docInfo != null) {
-                        stored.docInfo!!.subject = stored.selectedSubject
-                        stored.docInfo!!.organization = stored.selectedOrganization
-                        if (binding.etDatePicker.text.isEmpty()) {
-                            stored.docInfo!!.createdAt = Date()
-                        } else {
-                            stored.docInfo!!.createdAt =
-                                SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
-                                    .parse(binding.etDatePicker.text.toString())
-                        }
-                        if (stored.docInfo!!.direction == null) {
-                            stored.docInfo!!.direction = DocumentDirection.IN
-                        }
-                        stored.docInfo!!.comment = binding.etComment.text.toString()
-                        stored.docInfo!!.docLocation = stored.selectedLocation
-
-                    } else {
-                        stored.docInfo = DocInfo(
-                            null,
-                            stored.selectedSubject!!,
-                            DocumentDirection.IN,
-                            stored.selectedOrganization!!,
-                            null,
-                            SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
-                                .parse(binding.etDatePicker.text.toString()),
-                            binding.etComment.text.toString(),
-                            stored.selectedLocation
-                        )
-                    }
-                    NetworkClient()
-                        .sendDocInfo(this, stored.docInfo)
-                } catch (e: Exception) {
-                    Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
-                }
-            }
+        binding.btnSendAndPictures.setOnClickListener {
+            saveDocInfo(::redirectToPicturesAction)
+        }
+        binding.btnSendAndBack.setOnClickListener {
+            saveDocInfo(::redirectBackToList)
         }
         binding.btnSubject.setOnClickListener {
             val intent = Intent(this, SubjectListActivity::class.java)
@@ -195,6 +162,58 @@ class DocInfoActivity : AppCompatActivity() {
             activityOrganizationListLauncher.launch(intent)
 
         }
+    }
+
+    private fun saveDocInfo(onRedirect: () -> Unit) {
+        if (stored.selectedSubject != null && stored.selectedOrganization != null) {
+            try {
+                if (stored.docInfo != null) {
+                    stored.docInfo!!.subject = stored.selectedSubject
+                    stored.docInfo!!.organization = stored.selectedOrganization
+                    if (binding.etDatePicker.text.isEmpty()) {
+                        stored.docInfo!!.createdAt = Date()
+                    } else {
+                        stored.docInfo!!.createdAt =
+                            SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
+                                .parse(binding.etDatePicker.text.toString())
+                    }
+                    if (stored.docInfo!!.direction == null) {
+                        stored.docInfo!!.direction = DocumentDirection.IN
+                    }
+                    stored.docInfo!!.comment = binding.etComment.text.toString()
+                    stored.docInfo!!.docLocation = stored.selectedLocation
+
+                } else {
+                    stored.docInfo = DocInfo(
+                        null,
+                        stored.selectedSubject!!,
+                        DocumentDirection.IN,
+                        stored.selectedOrganization!!,
+                        null,
+                        SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH)
+                            .parse(binding.etDatePicker.text.toString()),
+                        binding.etComment.text.toString(),
+                        stored.selectedLocation
+                    )
+                }
+                NetworkClient()
+                    .sendDocInfo(this, stored.docInfo, onRedirect)
+            } catch (e: Exception) {
+                Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    fun redirectToPicturesAction() {
+        val intent = Intent(
+            this,
+            MainActivity::class.java
+        )
+        startActivity(intent)
+    }
+
+    fun redirectBackToList() {
+        super.onBackPressed()
     }
 
     private fun updateLabel(calendar: Calendar) {
@@ -219,7 +238,7 @@ class DocInfoActivity : AppCompatActivity() {
     private fun updateView() {
         binding.actSubject.setText(stored.selectedSubject?.value)
         binding.actOrganization.setText(stored.selectedOrganization?.name)
-        binding.etLocation.setText(stored.selectedLocation?.name)
+        binding.etLocation.setText(if (stored.selectedLocation != null) stored.selectedLocation!!.getLocatoinPath() else "")
         if (stored.docInfo != null) {
             binding.etComment.setText(stored.docInfo!!.comment)
             try {
