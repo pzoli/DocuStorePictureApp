@@ -45,13 +45,20 @@ class DocInfoListActivity : AppCompatActivity() {
     ) { result: ActivityResult? ->
         updateSettings()
         updateRecyclerView()
+        clearSelections()
+    }
+
+    private fun clearSelections() {
+        stored.selectedLocation = null
+        stored.selectedSubject = null
+        stored.selectedOrganization = null
+        val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+        stored.saveState(this, sharedPrefs)
     }
 
     val activityDocInfoEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
-//        if (result?.resultCode == RESULT_OK) {
-//        }
         docInfo = null
         updateRecyclerView()
     }
@@ -139,16 +146,25 @@ class DocInfoListActivity : AppCompatActivity() {
         }
 
         binding.btnNew.setOnClickListener {
+            val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+            stored.restoreFromSharedPrefs(this, sharedPrefs)
             stored.docInfo = null
-            // stored.selectedLocation = null // Sticky location
             stored.selectedOrganization = null
             stored.selectedSubject = null
-            val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
             stored.saveState(this, sharedPrefs)
 
             val intent = Intent(this, DocInfoActivity::class.java)
             val docInfoNew =
-                DocInfo(null, null, null, null, null, null, null, stored.selectedLocation) // sticky location
+                DocInfo(
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    stored.selectedLocation
+                )
             val bundle = Bundle();
             bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfoNew)
             intent.putExtras(bundle);
@@ -173,7 +189,7 @@ class DocInfoListActivity : AppCompatActivity() {
         }
 
         binding.btnDelete.setOnClickListener {
-            if (docInfo != null) {
+            if (selectedDocInfos.isNotEmpty()) {
                 val context = this
                 val alert: AlertDialog.Builder = AlertDialog.Builder(this)
                 alert.setTitle("Delete entry")
@@ -183,17 +199,24 @@ class DocInfoListActivity : AppCompatActivity() {
                     android.R.string.ok,
                     object : DialogInterface.OnClickListener {
                         override fun onClick(dialog: DialogInterface, which: Int) {
-                            try {
-                                ApiRoutins.deleteDocInfo(context, docInfo!!.id!!)
-                                docInfo = null
-                                stored.lastIFileInfoId = -1
-                                val sharedPrefs =
-                                    getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-                                stored.saveState(context, sharedPrefs)
-                                updateRecyclerView()
-                            } catch (e: Exception) {
-                                Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
+                            for (item in selectedDocInfos) {
+                                try {
+                                    ApiRoutins.deleteDocInfo(context, item.id!!)
+                                } catch (e: Exception) {
+                                    Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
+                                }
                             }
+                            docInfo = null
+                            selectedDocInfos.clear()
+                            selectedPositions.clear()
+                            stored.lastIFileInfoId = -1
+                            val sharedPrefs =
+                                getSharedPreferences(
+                                    "my_activity_prefs",
+                                    Context.MODE_PRIVATE
+                                )
+                            stored.saveState(context, sharedPrefs)
+                            updateRecyclerView()
                         }
                     }
                 )

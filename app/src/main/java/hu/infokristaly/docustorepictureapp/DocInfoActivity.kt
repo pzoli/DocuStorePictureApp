@@ -46,6 +46,7 @@ class DocInfoActivity : AppCompatActivity() {
         if (result?.resultCode == RESULT_OK) {
             stored.selectedOrganization =
                 result.data?.getSerializableExtra("organization") as Organization
+            saveSelections()
             updateView()
         }
     }
@@ -55,6 +56,7 @@ class DocInfoActivity : AppCompatActivity() {
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             stored.selectedSubject = result.data?.getSerializableExtra("subject") as DocumentSubject
+            saveSelections()
             updateView()
         }
     }
@@ -64,8 +66,14 @@ class DocInfoActivity : AppCompatActivity() {
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             stored.selectedLocation = result.data?.getSerializableExtra("location") as DocLocation
+            saveSelections()
             updateView()
         }
+    }
+
+    private fun saveSelections() {
+        val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+        stored.saveState(this, sharedPrefs)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -100,6 +108,7 @@ class DocInfoActivity : AppCompatActivity() {
                     intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
                 stored.selectedSubject = stored.docInfo!!.subject
                 stored.selectedOrganization = stored.docInfo!!.organization
+                stored.selectedLocation = stored.docInfo!!.docLocation
             }
         }
 

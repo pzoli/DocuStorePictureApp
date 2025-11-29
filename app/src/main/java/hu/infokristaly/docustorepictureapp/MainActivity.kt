@@ -460,8 +460,8 @@ class MainActivity : AppCompatActivity() {
                         override fun onClick(dialog: DialogInterface, which: Int) {
                             deleteImage()
                             deleteFromDatabase(stored.lastIFileInfoId)
+                            updateFileList()
                             if (fileList.isPresent && fileList.get().isNotEmpty()) {
-                                updateFileList()
                                 val firstFileInfo = fileList.get().get(0)
                                 val fileName = "${IMAGENAME_FROM_SERVER}.${firstFileInfo.uniqueFileName.substringAfter(".")}"
                                 val storageDir =
