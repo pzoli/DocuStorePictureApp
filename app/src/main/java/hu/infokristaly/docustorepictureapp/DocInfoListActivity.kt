@@ -151,6 +151,7 @@ class DocInfoListActivity : AppCompatActivity() {
             stored.docInfo = null
             stored.selectedOrganization = null
             stored.selectedSubject = null
+            stored.imageFilePath = ""
             stored.saveState(this, sharedPrefs)
 
             val intent = Intent(this, DocInfoActivity::class.java)

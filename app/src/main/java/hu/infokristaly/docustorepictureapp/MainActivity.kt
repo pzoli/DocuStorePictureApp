@@ -334,7 +334,8 @@ class MainActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         mScaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
 
-        if (intent.hasExtra(getString(R.string.KEY_DOCINFO)) && (stored.imageFilePath == "" || File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER))) {
+        if (intent.hasExtra(getString(R.string.KEY_DOCINFO))
+            && (stored.imageFilePath == "" || File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER))) {
             stored.docInfo =
                 intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
             if (stored.docInfo != null && stored.docInfo!!.id != null) {
@@ -361,7 +362,7 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this,e.message,Toast.LENGTH_LONG).show()
                 }
             }
-        } else if (stored.imageFilePath != "") {
+        } else {
             viewImage()
         }
 
