@@ -260,9 +260,10 @@ class MainActivity : AppCompatActivity() {
             val byteArray = ApiRoutins.getImage(this, fineInfo.id!!)
             if (byteArray.isPresent) {
                 try {
-                    val bmp = BitmapFactory.decodeByteArray(byteArray.get(), 0, byteArray.get().size)
+                    var bmp = BitmapFactory.decodeByteArray(byteArray.get(), 0, byteArray.get().size)
                     Files.write(Paths.get(stored.imageFilePath), byteArray.get())
-                    binding.imageView.setImageBitmap(correctOrientationByExif(bmp))
+                    bmp = correctOrientationByExif(bmp)
+                    binding.imageView.setImageBitmap(bmp)
                 } catch (e: Exception) {
                     Log.e("MainActivity", e.message.toString())
                 }

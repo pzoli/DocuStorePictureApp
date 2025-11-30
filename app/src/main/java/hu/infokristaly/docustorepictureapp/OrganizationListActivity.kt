@@ -1,7 +1,9 @@
 package hu.infokristaly.docustorepictureapp
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
@@ -9,6 +11,7 @@ import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.view.ViewCompat
@@ -35,11 +38,14 @@ class OrganizationListActivity : AppCompatActivity() {
     private var organization: Optional<Organization> = Optional.empty()
     private var organizations: Optional<List<Organization>> = Optional.of(listOf())
 
-    val activityOrganizationEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
+    val activityOrganizationEditorLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            organization = Optional.empty()
+            val outOrganization = result.data?.extras?.getSerializable(getString(R.string.KEY_ORGANIZATION));
+            if (outOrganization != null) {
+                organization = Optional.of(outOrganization as Organization)
+            }
             updateListView()
         }
     }
@@ -123,8 +129,14 @@ class OrganizationListActivity : AppCompatActivity() {
             Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
             organizations = Optional.of(listOf())
         }
-        binding.lvOrganizations.adapter = OrganizationAdapter(this, organizations.get())
-        binding.lvOrganizations.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        val adapter = OrganizationAdapter(this, organizations.get())
+        binding.lvOrganizations.adapter = adapter
+        binding.lvOrganizations.setChoiceMode(ListView.CHOICE_MODE_SINGLE)
+        if (organization.isPresent) {
+            val targetPosition = organizations.get().indexOf(organization.get());
+            binding.lvOrganizations.setItemChecked(targetPosition, true)
+            binding.lvOrganizations.setSelection(targetPosition)
+        }
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {

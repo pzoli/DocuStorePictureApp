@@ -50,13 +50,14 @@ class SubjectEditorActivity : AppCompatActivity() {
             val gson = Gson()
             val subjectJson = gson.toJson(subject)
             try {
-                ApiRoutins.postPutSubject(
+                val outSubject = ApiRoutins.postPutSubject(
                     this,
                     "https://$serverAddress/api/subject" + if (subject.id != null) "/${subject.id}" else "",
                     if (subject.id == null) "POST" else "PUT",
                     subjectJson
                 )
                 val i = Intent()
+                if (outSubject.isPresent) i.putExtra(getString(R.string.KEY_SUBJECT),outSubject.get())
                 setResult(RESULT_OK, i)
                 finish()
             } catch (e:Exception) {

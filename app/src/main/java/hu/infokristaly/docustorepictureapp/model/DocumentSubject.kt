@@ -2,7 +2,7 @@ package hu.infokristaly.docustorepictureapp.model
 
 import java.io.Serializable
 
-class DocumentSubject (
+data class DocumentSubject (
     var id: Long?,
     var value: String
 ) : Serializable {

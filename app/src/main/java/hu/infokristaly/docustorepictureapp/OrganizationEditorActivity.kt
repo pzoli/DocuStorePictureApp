@@ -17,6 +17,7 @@ import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import java.util.Optional
 
 class OrganizationEditorActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityOrganizationEditorBinding
     private lateinit var appbar: Toolbar
     private var organization: Optional<Organization> = Optional.of(Organization(null,"","","", 0))
@@ -56,14 +57,16 @@ class OrganizationEditorActivity : AppCompatActivity() {
             val gson = Gson()
             val organizationJson = gson.toJson(organization.get())
             try {
-                ApiRoutins.postPutOrganization(
+                val res = ApiRoutins.postPutOrganization(
                     self,
                     "https://$serverAddress/api/organization"
                             + if (organization.get().id != null) "/${organization.get().id}" else "",
                     if (organization.get().id == null) "POST" else "PUT",
                     organizationJson
                 )
-                val i = Intent()
+                val i = Intent().apply {
+                    if (res.isPresent) putExtra(getString(R.string.KEY_ORGANIZATION),res.get());
+                }
                 setResult(RESULT_OK, i)
                 finish()
             } catch (e:Exception) {

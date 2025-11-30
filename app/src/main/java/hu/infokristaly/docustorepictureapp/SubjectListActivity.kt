@@ -2,6 +2,7 @@ package hu.infokristaly.docustorepictureapp
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.MenuItem
 import android.widget.AdapterView
 import android.widget.ListView
@@ -17,7 +18,9 @@ import hu.infokristaly.docustorepictureapp.databinding.ActivitySubjectListBindin
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.SubjectAdapter
 import hu.infokristaly.docustorepictureapp.model.DocumentSubject
+import hu.infokristaly.docustorepictureapp.model.Organization
 import java.util.Optional
+import javax.security.auth.Subject
 
 class SubjectListActivity : AppCompatActivity() {
 
@@ -27,11 +30,14 @@ class SubjectListActivity : AppCompatActivity() {
     private var subject: Optional<DocumentSubject> = Optional.empty()
     private var subjects: Optional<List<DocumentSubject>> = Optional.of(listOf())
 
-    val activitySubjectEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
+    val activitySubjectEditorLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
-            subject = Optional.empty()
+            val outSubject = result.data?.extras?.getSerializable(getString(R.string.KEY_SUBJECT));
+            if (outSubject != null) {
+                subject = Optional.of(outSubject as DocumentSubject)
+            }
             updateListView()
         }
     }
@@ -53,6 +59,9 @@ class SubjectListActivity : AppCompatActivity() {
         appbar = findViewById(R.id.custom_appbar)
         setSupportActionBar(appbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        if (savedInstanceState?.getSerializable(getString(R.string.KEY_SUBJECT)) != null) {
+            subject = Optional.of(savedInstanceState.getSerializable(getString(R.string.KEY_SUBJECT)) as DocumentSubject)
+        }
 
         updateListView()
 
@@ -113,6 +122,11 @@ class SubjectListActivity : AppCompatActivity() {
         }
         binding.lvSubjects.adapter = SubjectAdapter(this, subjects.get())
         binding.lvSubjects.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
+        if (subject.isPresent) {
+            val targetPosition = subjects.get().indexOf(subject.get());
+            binding.lvSubjects.setItemChecked(targetPosition, true)
+            binding.lvSubjects.setSelection(targetPosition)
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
