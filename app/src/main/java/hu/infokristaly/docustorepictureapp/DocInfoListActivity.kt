@@ -36,9 +36,10 @@ class DocInfoListActivity : AppCompatActivity() {
     private lateinit var adapter: ItemAdapter
 
     private val selectedDocInfos: MutableList<DocInfo> = mutableListOf()
+    var selectedPositions: MutableList<Int> = mutableListOf()
+    var multiSelectMode = false
 
     private var docInfo: DocInfo? = null
-    var selectedPositions: MutableList<Int> = mutableListOf()
 
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
@@ -74,7 +75,7 @@ class DocInfoListActivity : AppCompatActivity() {
     private fun updateRecyclerView() {
         selectedPositions.clear()
         selectedDocInfos.clear()
-
+        multiSelectMode = false
         viewModel.currentPage = 1
         viewModel.items.value = listOf()
         viewModel.loadNextPage()
@@ -173,7 +174,7 @@ class DocInfoListActivity : AppCompatActivity() {
         }
 
         binding.btnModify.setOnClickListener {
-            if (docInfo != null) {
+            if (docInfo != null && !multiSelectMode) {
                 stored.docInfo = docInfo
                 stored.selectedLocation = docInfo!!.docLocation
                 stored.selectedOrganization = docInfo!!.organization
@@ -231,7 +232,7 @@ class DocInfoListActivity : AppCompatActivity() {
         }
 
         binding.btnSelect.setOnClickListener { it ->
-            if (docInfo != null) {
+            if (docInfo != null && !multiSelectMode) {
                 val intent = Intent(this, MainActivity::class.java)
                 val bundle = Bundle();
                 stored.lastIFileInfoId = -1
@@ -260,34 +261,54 @@ class DocInfoListActivity : AppCompatActivity() {
     }
 
     fun onSelectItem(docInfo: DocInfo, position: Int): Boolean {
-        if (selectedPositions.contains(position)) {
-            selectedPositions.remove(position)
+        if (multiSelectMode) {
+            if (selectedPositions.contains(position)) {
+                selectedPositions.remove(position)
+            } else {
+                selectedPositions.add(position)
+            }
+            var isSelected = false
+            val selectedItem = selectedDocInfos.contains(docInfo)
+            if (selectedItem) {
+                selectedDocInfos.remove(docInfo)
+            } else {
+                selectedDocInfos.add(docInfo)
+                isSelected = true
+            }
+            return isSelected
         } else {
+            val copy = mutableListOf<Int>()
+            copy.addAll(selectedPositions)
+            selectedPositions.clear()
             selectedPositions.add(position)
-        }
-        var isSelected = false
-        var selectedItem = selectedDocInfos.firstOrNull({ item -> docInfo.equals(item) })
-        if (selectedItem != null) {
-            selectedDocInfos.remove(selectedItem)
-        } else {
+            selectedDocInfos.clear()
             selectedDocInfos.add(docInfo)
-            isSelected = true
+            this.docInfo = docInfo
+            copy.forEach { pos ->
+                adapter.notifyItemChanged(pos)
+            }
+            return true
         }
-        this.docInfo = if (isSelected) docInfo else null
-        return isSelected
     }
 
     fun onTouchItem(docInfo: DocInfo, position: Int): Boolean {
         selectedDocInfos.clear()
         selectedDocInfos.add(docInfo)
-        this.docInfo = docInfo
-        selectedPositions.forEach { pos ->
-            if (pos != position) {
-                adapter.notifyItemChanged(pos)
-            }
-        }
+        val copy = mutableListOf<Int>()
+        copy.addAll(selectedPositions)
         selectedPositions.clear()
         selectedPositions.add(position)
+        copy.forEach { pos ->
+            adapter.notifyItemChanged(pos)
+        }
+        multiSelectMode = !multiSelectMode
+        if (!multiSelectMode) {
+            this.docInfo = docInfo
+            Toast.makeText(this, "Select single document!",Toast.LENGTH_LONG).show()
+        } else {
+            this.docInfo = null
+            Toast.makeText(this, "Select multiple documents!",Toast.LENGTH_LONG).show()
+        }
 
         return true
     }

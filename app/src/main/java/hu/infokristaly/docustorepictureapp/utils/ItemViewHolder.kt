@@ -9,9 +9,12 @@ import java.text.SimpleDateFormat
 
 class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
     private val itemTextView: TextView = itemView.findViewById(R.id.item_text)
-
+    private val itemDateView: TextView = itemView.findViewById(R.id.item_date)
+    private val itemCommentView: TextView = itemView.findViewById(R.id.item_comment)
     fun bind(docInfo: DocInfo) {
         val formatedCreatedAt = SimpleDateFormat("yyyy-MM-dd HH:mm").format(docInfo.createdAt!!)
-        itemTextView.text = "${formatedCreatedAt} - ${docInfo.organization?.name} - ${docInfo.subject?.value} - ${docInfo.comment}"
+        itemDateView.text = formatedCreatedAt
+        itemTextView.text = "${docInfo.organization?.name} - ${docInfo.subject?.value}"
+        itemCommentView.text = docInfo.comment
     }
 }
