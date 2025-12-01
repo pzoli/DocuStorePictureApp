@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
@@ -112,7 +113,7 @@ class DocInfoListActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
 
         val layoutManager = binding.lvDocInfos.layoutManager as LinearLayoutManager
-        adapter = ItemAdapter(emptyList(), ::isPositionSelected)
+        adapter = ItemAdapter(emptyList(), ::isPositionSelected, ::modifyItem)
         binding.lvDocInfos.adapter = adapter
         viewModel.items.observe(this) { newItems ->
             adapter.updateItems(newItems)
@@ -127,12 +128,7 @@ class DocInfoListActivity : AppCompatActivity() {
                 val totalItemCount = layoutManager.itemCount
                 val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
-                // Ha már nincs több adat, ne töltsön be
-                // if (isLastPage) return
-
-                // A betöltést akkor indítjuk el, ha görgettünk, és a lista végéhez közelítünk
-                if (dy > 0) { // Csak lefelé görgetéskor
-                    // A küszöbérték (threshold): Akkor kezdje el a betöltést, ha már csak 5 elem maradt
+                if (dy > 0) {
                     val threshold = 5
                     if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - threshold) {
                         viewModel.loadNextPage()
@@ -146,111 +142,120 @@ class DocInfoListActivity : AppCompatActivity() {
             viewModel.loadNextPage()
         }
 
-        binding.btnNew.setOnClickListener {
-            val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-            stored.restoreFromSharedPrefs(this, sharedPrefs)
-            stored.docInfo = null
-            stored.selectedOrganization = null
-            stored.selectedSubject = null
-            stored.imageFilePath = ""
-            stored.saveState(this, sharedPrefs)
-
-            val intent = Intent(this, DocInfoActivity::class.java)
-            val docInfoNew =
-                DocInfo(
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    null,
-                    stored.selectedLocation
-                )
-            val bundle = Bundle();
-            bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfoNew)
-            intent.putExtras(bundle);
-            activityDocInfoEditorLauncher.launch(intent)
-        }
-
-        binding.btnModify.setOnClickListener {
-            if (docInfo != null && !multiSelectMode) {
-                stored.docInfo = docInfo
-                stored.selectedLocation = docInfo!!.docLocation
-                stored.selectedOrganization = docInfo!!.organization
-                stored.selectedSubject = docInfo!!.subject
-                val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-                stored.saveState(this, sharedPrefs)
-
-                val intent = Intent(this, DocInfoActivity::class.java)
-                val bundle = Bundle();
-                bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
-                intent.putExtras(bundle);
-                activityDocInfoEditorLauncher.launch(intent)
-            }
-        }
-
-        binding.btnDelete.setOnClickListener {
-            if (selectedDocInfos.isNotEmpty()) {
-                val context = this
-                val alert: AlertDialog.Builder = AlertDialog.Builder(this)
-                alert.setTitle("Delete entry")
-                alert.setMessage("Are you sure you want to delete?")
-                val self = this
-                alert.setPositiveButton(
-                    android.R.string.ok,
-                    object : DialogInterface.OnClickListener {
-                        override fun onClick(dialog: DialogInterface, which: Int) {
-                            for (item in selectedDocInfos) {
-                                try {
-                                    ApiRoutins.deleteDocInfo(context, item.id!!)
-                                } catch (e: Exception) {
-                                    Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
-                                }
-                            }
-                            docInfo = null
-                            selectedDocInfos.clear()
-                            selectedPositions.clear()
-                            stored.lastIFileInfoId = -1
-                            val sharedPrefs =
-                                getSharedPreferences(
-                                    "my_activity_prefs",
-                                    Context.MODE_PRIVATE
-                                )
-                            stored.saveState(context, sharedPrefs)
-                            updateRecyclerView()
-                        }
-                    }
-                )
-                alert.setNegativeButton(android.R.string.cancel,
-                    DialogInterface.OnClickListener { dialog, which -> // close dialog
-                        dialog.cancel()
-                    })
-                alert.show()
-
-            }
-        }
-
-        binding.btnSelect.setOnClickListener { it ->
-            if (docInfo != null && !multiSelectMode) {
-                val intent = Intent(this, MainActivity::class.java)
-                val bundle = Bundle();
-                stored.lastIFileInfoId = -1
-                stored.imageFilePath = ""
-                stored.docInfo = docInfo
-                val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-                stored.saveState(this, sharedPrefs)
-
-                bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
-                bundle.putSerializable(getString(R.string.KEY_IMAGEPATH), "")
-                intent.putExtras(bundle);
-                activityMainLauncher.launch(intent)
-            }
-        }
         binding.swipeRefreshLayout.setOnRefreshListener(OnRefreshListener {
             updateRecyclerView()
             binding.swipeRefreshLayout.setRefreshing(false)
         })
+    }
+
+    fun modifyItem(item : DocInfo) {
+        docInfo = item
+        modifyDocInfo()
+    }
+
+    private fun selectDocInfo() {
+        if (docInfo != null && !multiSelectMode) {
+            val intent = Intent(this, MainActivity::class.java)
+            val bundle = Bundle();
+            stored.lastIFileInfoId = -1
+            stored.imageFilePath = ""
+            stored.docInfo = docInfo
+            val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+            stored.saveState(this, sharedPrefs)
+
+            bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
+            bundle.putSerializable(getString(R.string.KEY_IMAGEPATH), "")
+            intent.putExtras(bundle);
+            activityMainLauncher.launch(intent)
+        }
+
+    }
+
+    private fun deleteSelectedDocInfos() {
+        if (selectedDocInfos.isNotEmpty()) {
+            val context = this
+            val alert: AlertDialog.Builder = AlertDialog.Builder(this)
+            alert.setTitle("Delete entry")
+            alert.setMessage("Are you sure you want to delete?")
+            val self = this
+            alert.setPositiveButton(
+                android.R.string.ok,
+                object : DialogInterface.OnClickListener {
+                    override fun onClick(dialog: DialogInterface, which: Int) {
+                        for (item in selectedDocInfos) {
+                            try {
+                                ApiRoutins.deleteDocInfo(context, item.id!!)
+                            } catch (e: Exception) {
+                                Toast.makeText(self, e.toString(), Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        docInfo = null
+                        selectedDocInfos.clear()
+                        selectedPositions.clear()
+                        stored.lastIFileInfoId = -1
+                        val sharedPrefs =
+                            getSharedPreferences(
+                                "my_activity_prefs",
+                                Context.MODE_PRIVATE
+                            )
+                        stored.saveState(context, sharedPrefs)
+                        updateRecyclerView()
+                    }
+                }
+            )
+            alert.setNegativeButton(android.R.string.cancel,
+                DialogInterface.OnClickListener { dialog, which -> // close dialog
+                    dialog.cancel()
+                })
+            alert.show()
+
+        }
+
+    }
+
+    private fun modifyDocInfo() {
+        if (docInfo != null && !multiSelectMode) {
+            stored.docInfo = docInfo
+            stored.selectedLocation = docInfo!!.docLocation
+            stored.selectedOrganization = docInfo!!.organization
+            stored.selectedSubject = docInfo!!.subject
+            val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+            stored.saveState(this, sharedPrefs)
+
+            val intent = Intent(this, DocInfoActivity::class.java)
+            val bundle = Bundle();
+            bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
+            intent.putExtras(bundle);
+            activityDocInfoEditorLauncher.launch(intent)
+        }
+    }
+
+    private fun createNewDocInfo() {
+        val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
+        stored.restoreFromSharedPrefs(this, sharedPrefs)
+        stored.docInfo = null
+        stored.selectedOrganization = null
+        stored.selectedSubject = null
+        stored.imageFilePath = ""
+        stored.saveState(this, sharedPrefs)
+
+        val intent = Intent(this, DocInfoActivity::class.java)
+        val docInfoNew =
+            DocInfo(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                stored.selectedLocation
+            )
+        val bundle = Bundle();
+        bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfoNew)
+        intent.putExtras(bundle);
+        activityDocInfoEditorLauncher.launch(intent)
+
     }
 
     private fun updateSettings() {
@@ -334,6 +339,18 @@ class DocInfoListActivity : AppCompatActivity() {
             R.id.m_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 activitySettingsLauncher.launch(intent)
+            }
+
+            R.id.m_delete -> {
+                deleteSelectedDocInfos()
+            }
+
+            R.id.m_select -> {
+                selectDocInfo()
+            }
+
+            R.id.m_new -> {
+                createNewDocInfo()
             }
 
             android.R.id.home -> {

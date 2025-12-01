@@ -3,6 +3,24 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/m_new"
+        android:title="New"
+        android:icon="@drawable/baseline_new_label_24"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/m_delete"
+        android:title="Delete"
+        android:icon="@drawable/baseline_delete_forever_24"
+        app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/m_select"
+        android:title="Select"
+        android:icon="@drawable/baseline_check_24"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/m_settings"
         android:title="Settings"
         android:icon="@drawable/baseline_settings_24"
