@@ -76,6 +76,7 @@ class MainActivity : AppCompatActivity() {
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             resetImagePosAndScale()
+            uploadFile()
             viewImage()
         }
     }
@@ -85,6 +86,7 @@ class MainActivity : AppCompatActivity() {
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
             resetImagePosAndScale()
+            uploadFile()
             viewImage()
         } else {
             deleteImage()
@@ -97,19 +99,11 @@ class MainActivity : AppCompatActivity() {
         if (result?.resultCode == RESULT_OK) {
             val selectedImageUri: Uri? = result.data!!.data
             try {
-                /*
-                val selectedImageBitmap: Bitmap = MediaStore.Images.Media.getBitmap(
-                    this.contentResolver,
-                    selectedImageUri
-                )
-                binding.imageView.setImageBitmap(
-                    selectedImageBitmap
-                );
-                 */
                 val photoPath = getRealPathFromURI(selectedImageUri!!)!!
                 val target = createImageFile()
                 Files.copy(File(photoPath).toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
                 resetImagePosAndScale()
+                uploadFile()
                 viewImage()
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -194,6 +188,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
         }
     }
+
     fun queryImages(fileNameParam:String) {
         val imageProjection = arrayOf(
             MediaStore.Images.Media._ID,
@@ -438,17 +433,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             R.id.m_upload -> {
-                if (stored.imageFilePath != "") {
-                    if (File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER)) {
-                        NetworkClient().updateOnServer(this, stored.lastIFileInfoId, stored.imageFilePath)
-                    } else {
-                        NetworkClient().uploadToServer(
-                            this,
-                            stored.docInfo,
-                            stored.imageFilePath
-                        )
-                    }
-                }
+                uploadFile()
                 viewImage()
             }
 
@@ -487,6 +472,20 @@ class MainActivity : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    private fun uploadFile() {
+        if (stored.imageFilePath != "") {
+            if (File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER)) {
+                NetworkClient().updateOnServer(this, stored.lastIFileInfoId, stored.imageFilePath)
+            } else {
+                NetworkClient().uploadToServer(
+                    this,
+                    stored.docInfo,
+                    stored.imageFilePath
+                )
+            }
+        }
     }
 
     private fun takeAPicture() {
