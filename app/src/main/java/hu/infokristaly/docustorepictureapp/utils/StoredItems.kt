@@ -19,6 +19,7 @@ class StoredItems {
     var docInfo: DocInfo? = null
     var selectedOrganization: Organization? = null
     var selectedSubject: DocumentSubject? = null
+    var currentSearchTerm: String = ""
 
     fun getSerializedLocation(): String {
         val gson = Gson()
@@ -111,6 +112,7 @@ class StoredItems {
         val serializeLocation = getSerializedLocation()
         outState.putString(context.getString(R.string.KEY_SELECTEDLOCATION), serializeLocation)
         outState.putLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID), lastIFileInfoId)
+        outState.putString(context.getString(R.string.KEY_CURRENT_SEARCH_TERM), currentSearchTerm)
     }
 
     fun restoreStateFromBundle(context: Context, savedInstanceState: Bundle) {
@@ -121,6 +123,7 @@ class StoredItems {
             getOrganizationFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_SELECTEDORGANIZATION))?:"")
             getLocationFromJSON(savedInstanceState.getString(context.getString(R.string.KEY_SELECTEDLOCATION))?:"")
             lastIFileInfoId = savedInstanceState.getLong(context.getString(R.string.KEY_LAST_VIEWED_FILEINFO_ID))
+            currentSearchTerm = savedInstanceState.getString(context.getString(R.string.KEY_CURRENT_SEARCH_TERM), "")
         }
     }
 

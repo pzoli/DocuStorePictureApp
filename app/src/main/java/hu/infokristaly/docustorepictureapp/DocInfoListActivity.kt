@@ -29,7 +29,7 @@ import hu.infokristaly.docustorepictureapp.utils.ItemViewModel
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
 
 
-class DocInfoListActivity : AppCompatActivity() {
+class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
     private lateinit var binding: ActivityDocinfoListBinding
     private lateinit var appbar: Toolbar
     private lateinit var stored: StoredItems
@@ -79,7 +79,7 @@ class DocInfoListActivity : AppCompatActivity() {
         multiSelectMode = false
         viewModel.currentPage = 1
         viewModel.items.value = listOf()
-        viewModel.loadNextPage()
+        viewModel.loadNextPage(stored.currentSearchTerm)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -131,7 +131,7 @@ class DocInfoListActivity : AppCompatActivity() {
                 if (dy > 0) {
                     val threshold = 5
                     if ((visibleItemCount + firstVisibleItemPosition) >= totalItemCount - threshold) {
-                        viewModel.loadNextPage()
+                        viewModel.loadNextPage(stored.currentSearchTerm)
                     }
                 }
             }
@@ -139,7 +139,7 @@ class DocInfoListActivity : AppCompatActivity() {
 
         // Első betöltés elindítása
         if (viewModel.items.value.isNullOrEmpty()) {
-            viewModel.loadNextPage()
+            viewModel.loadNextPage(stored.currentSearchTerm)
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener(OnRefreshListener {
@@ -340,7 +340,9 @@ class DocInfoListActivity : AppCompatActivity() {
                 val intent = Intent(this, SettingsActivity::class.java)
                 activitySettingsLauncher.launch(intent)
             }
-
+            R.id.m_search -> {
+                showFilterDialog()
+            }
             R.id.m_delete -> {
                 deleteSelectedDocInfos()
             }
@@ -359,6 +361,25 @@ class DocInfoListActivity : AppCompatActivity() {
             }
         }
         return super.onOptionsItemSelected(item)
+    }
+
+    fun showFilterDialog() {
+        val dialog = SearchFilterDialogFragment.newInstance(stored.currentSearchTerm)
+
+        // Beállítjuk a Listener-t magára az Activity-re
+        dialog.listener = this
+
+        // Megjelenítjük a dialógust
+        dialog.show(supportFragmentManager, "SearchFilterDialog")
+    }
+
+    // A FilterDialogListener interfész megvalósítása
+    override fun onFilterApplied(searchText: String) {
+        // Frissítjük a feltételt
+        stored.currentSearchTerm = searchText
+        //TODO store search things
+        // Indítjuk a szűrést az új feltétellel
+        updateRecyclerView()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {

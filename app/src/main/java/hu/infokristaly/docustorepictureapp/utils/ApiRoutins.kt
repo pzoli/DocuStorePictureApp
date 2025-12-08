@@ -460,6 +460,36 @@ class ApiRoutins {
             return docInfoList
         }
 
+        @Throws(Exception::class)
+        fun getFilteredDocInfos(
+            userName: String,
+            password: String,
+            serverAddress: String,
+            filter: String,
+            page: Int
+        ): Optional<List<DocInfo>> {
+            var docInfoList: Optional<List<DocInfo>> = Optional.empty()
+            runBlocking {
+                var result: Deferred<String?> = async() {
+                    withContext(Dispatchers.IO) {
+                        val result =
+                            getApiRequest(
+                                URL("https://$serverAddress/api/docinfo/filter/"+filter+"/"+page),
+                                userName,
+                                password
+                            )
+                        return@withContext result
+                    }
+                }
+
+                val docInfosResult = result.await()
+                val gson = Gson()
+                val itemType = object : TypeToken<List<DocInfo>>() {}.type
+                docInfoList = Optional.of(gson.fromJson(docInfosResult, itemType))
+            }
+            return docInfoList
+        }
+
         fun getImage(context: Context, id: Long): Optional<ByteArray> {
             val userName = getSharedPrefProp(context, context.getString(R.string.KEY_USERNAME))
             val password = getSharedPrefProp(context, context.getString(R.string.KEY_PASSWORD))

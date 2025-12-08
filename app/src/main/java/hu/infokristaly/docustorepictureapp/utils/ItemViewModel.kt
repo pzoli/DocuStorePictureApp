@@ -16,12 +16,12 @@ class ItemViewModel : ViewModel() {
     var password: String = ""
     var serverAddress: String = ""
 
-    fun loadNextPage() {
+    fun loadNextPage(currentSearchTerm: String) {
         if (isLoading) return
 
         isLoading = true
         viewModelScope.launch {
-            val newItems = fetchItemsFromApi(currentPage)
+            val newItems = if (currentSearchTerm.isEmpty()) fetchItemsFromApi(currentPage) else fetchFilteredItemsFromApi(currentSearchTerm,currentPage)
             if (newItems.isNotEmpty()) {
                 withContext(Dispatchers.Main) {
                     val currentList = items.value.orEmpty().toMutableList()
@@ -37,6 +37,14 @@ class ItemViewModel : ViewModel() {
     private suspend fun fetchItemsFromApi(page: Int): List<DocInfo> = withContext(Dispatchers.IO) {
         try {
             return@withContext ApiRoutins.getDocInfos(userName, password, serverAddress, page).get()
+        } catch (e:Exception) {
+            return@withContext listOf()
+        }
+    }
+
+    private suspend fun fetchFilteredItemsFromApi(filter: String, page: Int): List<DocInfo> = withContext(Dispatchers.IO) {
+        try {
+            return@withContext ApiRoutins.getFilteredDocInfos(userName, password, serverAddress, filter, page).get()
         } catch (e:Exception) {
             return@withContext listOf()
         }
