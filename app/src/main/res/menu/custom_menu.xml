@@ -9,15 +9,15 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/m_delete"
-        android:title="Delete"
-        android:icon="@drawable/baseline_delete_forever_24"
+        android:id="@+id/m_search"
+        android:title="Search"
+        android:icon="@drawable/baseline_image_search_24"
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/m_select"
-        android:title="Select"
-        android:icon="@drawable/baseline_check_24"
+        android:id="@+id/m_delete"
+        android:title="Delete"
+        android:icon="@drawable/baseline_delete_forever_24"
         app:showAsAction="ifRoom" />
 
     <item
@@ -26,9 +26,4 @@
         android:icon="@drawable/baseline_settings_24"
         app:showAsAction="always" />
 
-    <item
-        android:id="@+id/m_search"
-        android:title="Search"
-        android:icon="@drawable/baseline_image_search_24"
-        app:showAsAction="ifRoom" />
 </menu>

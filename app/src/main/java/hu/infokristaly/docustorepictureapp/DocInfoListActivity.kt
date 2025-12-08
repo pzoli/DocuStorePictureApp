@@ -7,7 +7,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResult
@@ -148,9 +150,9 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
         })
     }
 
-    fun modifyItem(item : DocInfo) {
+    fun modifyItem(item : DocInfo, view: View) {
         docInfo = item
-        modifyDocInfo()
+        showPopupMenu(view)
     }
 
     private fun selectDocInfo() {
@@ -176,7 +178,7 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
             val context = this
             val alert: AlertDialog.Builder = AlertDialog.Builder(this)
             alert.setTitle("Delete entry")
-            alert.setMessage("Are you sure you want to delete?")
+            alert.setMessage("Are you sure you want to delete ${selectedDocInfos.size} item?")
             val self = this
             alert.setPositiveButton(
                 android.R.string.ok,
@@ -346,11 +348,6 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
             R.id.m_delete -> {
                 deleteSelectedDocInfos()
             }
-
-            R.id.m_select -> {
-                selectDocInfo()
-            }
-
             R.id.m_new -> {
                 createNewDocInfo()
             }
@@ -382,6 +379,26 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
         updateRecyclerView()
     }
 
+    fun showPopupMenu(view: View?) {
+        if (!multiSelectMode) {
+            val popup = PopupMenu(applicationContext, view)
+            popup.menuInflater.inflate(R.menu.popup_menu, popup.menu)
+            popup.setOnMenuItemClickListener { menuItem ->
+                when (menuItem.itemId) {
+                    R.id.menu_item_edit -> {
+                        modifyDocInfo()
+                        true
+                    }
+                    R.id.menu_item_select -> {
+                        selectDocInfo()
+                        true
+                    }
+                    else -> false
+                }
+            }
+            popup.show()
+        }
+    }
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         stored.saveInstanceState(this, outState)
