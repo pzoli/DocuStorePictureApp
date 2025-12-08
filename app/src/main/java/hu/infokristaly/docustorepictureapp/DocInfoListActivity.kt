@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ImageButton
 import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -21,7 +20,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
 import hu.infokristaly.docustorepictureapp.databinding.ActivityDocinfoListBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
@@ -40,11 +38,11 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
 
     private val selectedDocInfos: MutableList<DocInfo> = mutableListOf()
     var selectedPositions: MutableList<Int> = mutableListOf()
-    var multiSelectMode = false
+    private var multiSelectMode = false
 
     private var docInfo: DocInfo? = null
 
-    val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
+    private val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         updateSettings()
@@ -60,14 +58,14 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
         stored.saveState(this, sharedPrefs)
     }
 
-    val activityDocInfoEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
+    private val activityDocInfoEditorLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         docInfo = null
         updateRecyclerView()
     }
 
-    val activityMainLauncher = registerForActivityResult<Intent, ActivityResult>(
+    private val activityMainLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
         if (result?.resultCode == RESULT_OK) {
@@ -87,8 +85,6 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
-        val self = this
 
         viewModel = ViewModelProvider(this).get(ItemViewModel::class.java)
         updateSettings()
@@ -144,13 +140,13 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
             viewModel.loadNextPage(stored.currentSearchTerm)
         }
 
-        binding.swipeRefreshLayout.setOnRefreshListener(OnRefreshListener {
+        binding.swipeRefreshLayout.setOnRefreshListener {
             updateRecyclerView()
             binding.swipeRefreshLayout.setRefreshing(false)
-        })
+        }
     }
 
-    fun modifyItem(item : DocInfo, view: View) {
+    private fun modifyItem(item : DocInfo, view: View) {
         docInfo = item
         showPopupMenu(view)
     }
@@ -158,7 +154,7 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
     private fun selectDocInfo() {
         if (docInfo != null && !multiSelectMode) {
             val intent = Intent(this, MainActivity::class.java)
-            val bundle = Bundle();
+            val bundle = Bundle()
             stored.lastIFileInfoId = -1
             stored.imageFilePath = ""
             stored.docInfo = docInfo
@@ -167,7 +163,7 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
 
             bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
             bundle.putSerializable(getString(R.string.KEY_IMAGEPATH), "")
-            intent.putExtras(bundle);
+            intent.putExtras(bundle)
             activityMainLauncher.launch(intent)
         }
 
@@ -205,10 +201,10 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
                     }
                 }
             )
-            alert.setNegativeButton(android.R.string.cancel,
-                DialogInterface.OnClickListener { dialog, which -> // close dialog
-                    dialog.cancel()
-                })
+            alert.setNegativeButton(android.R.string.cancel
+            ) { dialog, _ -> // close dialog
+                dialog.cancel()
+            }
             alert.show()
 
         }
@@ -225,9 +221,9 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
             stored.saveState(this, sharedPrefs)
 
             val intent = Intent(this, DocInfoActivity::class.java)
-            val bundle = Bundle();
+            val bundle = Bundle()
             bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfo)
-            intent.putExtras(bundle);
+            intent.putExtras(bundle)
             activityDocInfoEditorLauncher.launch(intent)
         }
     }
@@ -253,9 +249,9 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
                 null,
                 stored.selectedLocation
             )
-        val bundle = Bundle();
+        val bundle = Bundle()
         bundle.putSerializable(getString(R.string.KEY_DOCINFO), docInfoNew)
-        intent.putExtras(bundle);
+        intent.putExtras(bundle)
         activityDocInfoEditorLauncher.launch(intent)
 
     }
@@ -267,7 +263,7 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
             getSharedPrefProp(this, this.getString(R.string.KEY_SERVERADDRESS))
     }
 
-    fun onSelectItem(docInfo: DocInfo, position: Int): Boolean {
+    private fun onSelectItem(docInfo: DocInfo, position: Int): Boolean {
         if (multiSelectMode) {
             if (selectedPositions.contains(position)) {
                 selectedPositions.remove(position)
@@ -360,7 +356,7 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
         return super.onOptionsItemSelected(item)
     }
 
-    fun showFilterDialog() {
+    private fun showFilterDialog() {
         val dialog = SearchFilterDialogFragment.newInstance(stored.currentSearchTerm)
 
         // Beállítjuk a Listener-t magára az Activity-re
@@ -379,7 +375,7 @@ class DocInfoListActivity : AppCompatActivity(), FilterDialogListener {
         updateRecyclerView()
     }
 
-    fun showPopupMenu(view: View?) {
+    private fun showPopupMenu(view: View?) {
         if (!multiSelectMode) {
             val popup = PopupMenu(applicationContext, view)
             popup.menuInflater.inflate(R.menu.popup_menu, popup.menu)
