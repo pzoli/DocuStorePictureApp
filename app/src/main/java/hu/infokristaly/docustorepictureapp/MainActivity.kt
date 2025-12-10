@@ -36,7 +36,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.exifinterface.media.ExifInterface
 import androidx.lifecycle.lifecycleScope
-import coil.ImageLoader
+import coil.Coil
 import coil.request.ImageRequest
 import coil.size.Scale
 import coil.size.Size
@@ -264,9 +264,7 @@ class MainActivity : AppCompatActivity() {
         height: Int
     ): Bitmap? {
 
-        val imageLoader = ImageLoader.Builder(context)
-            .allowHardware(false)
-            .build()
+        val imageLoader = Coil.imageLoader(context)
 
         val request = ImageRequest.Builder(context)
             .data(source)
@@ -283,7 +281,7 @@ class MainActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 try {
                     var myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
-                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) {
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (myBitmap.width > 4096 || myBitmap.height > 4096)) {
                         val bArray = bitmapToCompressedByteArray(myBitmap)
                         myBitmap = resizeBitmapWithCoil(applicationContext, bArray, 4096, 4096)
                     }
@@ -306,7 +304,7 @@ class MainActivity : AppCompatActivity() {
                             BitmapFactory.decodeByteArray(byteArray.get(), 0, byteArray.get().size)
                         Files.write(Paths.get(stored.imageFilePath), byteArray.get())
                         bmp = correctOrientationByExif(bmp)
-                        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) {
+                        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (bmp.width > 4096 || bmp.height > 4096)) {
                             val bArray = bitmapToCompressedByteArray(bmp)
                             bmp = resizeBitmapWithCoil(applicationContext, bArray, 4096, 4096)
                         }
@@ -326,16 +324,8 @@ class MainActivity : AppCompatActivity() {
         format: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG,
         quality: Int = 90
     ): ByteArray {
-
         val outputStream = ByteArrayOutputStream()
-
-        // 1. Tömörítés
-        // Az outputStream-be írja a tömörített képadatot.
-        // format: JPEG, PNG, vagy WEBP.
-        // quality: Tömörítési minőség (0-100), PNG esetén figyelmen kívül hagyja.
         bitmap.compress(format, quality, outputStream)
-
-        // 2. Kiolvasás
         return outputStream.toByteArray()
     }
 
