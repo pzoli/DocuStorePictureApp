@@ -61,6 +61,7 @@ dependencies {
     implementation ("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
     implementation("androidx.recyclerview:recyclerview:1.2.1")
     implementation("io.github.amrdeveloper:treeview:1.2.0")
+    implementation("io.coil-kt:coil:2.7.0")
     implementation(libs.androidx.navigation.fragment.ktx)
     implementation(libs.androidx.navigation.ui.ktx)
 

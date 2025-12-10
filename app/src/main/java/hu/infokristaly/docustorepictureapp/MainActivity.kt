@@ -11,6 +11,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Insets
 import android.graphics.Matrix
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -34,12 +35,19 @@ import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.exifinterface.media.ExifInterface
+import androidx.lifecycle.lifecycleScope
+import coil.ImageLoader
+import coil.request.ImageRequest
+import coil.size.Scale
+import coil.size.Size
 import hu.infokristaly.docustorepictureapp.databinding.ActivityMainBinding
 import hu.infokristaly.docustorepictureapp.model.DocInfo
 import hu.infokristaly.docustorepictureapp.model.FileInfo
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
+import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -68,7 +76,7 @@ class MainActivity : AppCompatActivity() {
     private var toolbar: Toolbar? = null
     var fileList: Optional<List<FileInfo>> = Optional.of(listOf())
 
-    var  photoFile: File? = null
+    var photoFile: File? = null
     var moveToTarget = true
 
     val activityCropLauncher = registerForActivityResult<Intent, ActivityResult>(
@@ -101,7 +109,11 @@ class MainActivity : AppCompatActivity() {
             try {
                 val photoPath = getRealPathFromURI(selectedImageUri!!)!!
                 val target = createImageFile()
-                Files.copy(File(photoPath).toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                Files.copy(
+                    File(photoPath).toPath(),
+                    target.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+                )
                 resetImagePosAndScale()
                 uploadFile()
                 viewImage()
@@ -161,20 +173,25 @@ class MainActivity : AppCompatActivity() {
             if (cursor.moveToFirst()) {
                 val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
                 val id = cursor.getLong(idColumn)
-                return Uri.withAppendedPath(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, id.toString())
+                return Uri.withAppendedPath(
+                    MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                    id.toString()
+                )
             }
         }
 
         return null
     }
+
     fun deleteFromDatabase(fileInfoId: Long) {
         try {
             ApiRoutins.deleteFileInfo(this, fileInfoId)
-        } catch (e:Exception) {
-            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show()
             Log.e("MainActivity", e.message.toString())
         }
     }
+
     val activitySettingsLauncher = registerForActivityResult<Intent, ActivityResult>(
         ActivityResultContracts.StartActivityForResult()
     ) { result: ActivityResult? ->
@@ -184,12 +201,12 @@ class MainActivity : AppCompatActivity() {
     fun updateFileList() {
         try {
             fileList = ApiRoutins.getFileInfosForDocInfo(this, stored.docInfo!!.id)
-        } catch (e:Exception) {
-            Toast.makeText(this,e.toString(),Toast.LENGTH_LONG).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, e.toString(), Toast.LENGTH_LONG).show()
         }
     }
 
-    fun queryImages(fileNameParam:String) {
+    fun queryImages(fileNameParam: String) {
         val imageProjection = arrayOf(
             MediaStore.Images.Media._ID,
             MediaStore.Images.Media.DISPLAY_NAME,
@@ -215,7 +232,9 @@ class MainActivity : AppCompatActivity() {
                 val name = it.getString(nameColumn)
                 val size = it.getString(sizeColumn)
                 val date = it.getString(dateColumn)
-                if (name.trim().startsWith(fileNameParam.trim()) || name.trim().endsWith(fileNameParam.trim())) {
+                if (name.trim().startsWith(fileNameParam.trim()) || name.trim()
+                        .endsWith(fileNameParam.trim())
+                ) {
                     Log.i("MainActivity", name)
                 }
                 Log.d("IMAGE", "$id $name $size $date")
@@ -223,7 +242,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun correctOrientationByExif(myBitmap:  Bitmap): Bitmap? {
+    private fun correctOrientationByExif(myBitmap: Bitmap): Bitmap? {
         try {
             val exif = ExifInterface(File(stored.imageFilePath))
             val orientation = exif!!.getAttributeInt(
@@ -237,35 +256,87 @@ class MainActivity : AppCompatActivity() {
         }
 
     }
-    private fun viewImage() {
-        if (stored.imageFilePath != "") {
-            try {
-                val myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
-                binding.imageView.setImageBitmap(correctOrientationByExif(myBitmap))
-            } catch (e:Exception) {
-                Log.e("MainActivity",e.message.toString())
-            }
-        }
-        else
-            binding.imageView.setImageBitmap(null)
+
+    suspend fun resizeBitmapWithCoil(
+        context: Context,
+        source: ByteArray,
+        width: Int,
+        height: Int
+    ): Bitmap? {
+
+        val imageLoader = ImageLoader.Builder(context)
+            .allowHardware(false)
+            .build()
+
+        val request = ImageRequest.Builder(context)
+            .data(source)
+            .size(Size(width, height))
+            .scale(Scale.FIT)
+            .memoryCachePolicy(coil.request.CachePolicy.DISABLED)
+            .build()
+        val result = imageLoader.execute(request)
+        return (result.drawable as? BitmapDrawable)?.bitmap
     }
 
-    fun loadImageById(fineInfo:FileInfo) {
-        try{
-            val byteArray = ApiRoutins.getImage(this, fineInfo.id!!)
-            if (byteArray.isPresent) {
+    private fun viewImage() {
+        if (stored.imageFilePath != "") {
+            lifecycleScope.launch {
                 try {
-                    var bmp = BitmapFactory.decodeByteArray(byteArray.get(), 0, byteArray.get().size)
-                    Files.write(Paths.get(stored.imageFilePath), byteArray.get())
-                    bmp = correctOrientationByExif(bmp)
-                    binding.imageView.setImageBitmap(bmp)
+                    var myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) {
+                        val bArray = bitmapToCompressedByteArray(myBitmap)
+                        myBitmap = resizeBitmapWithCoil(applicationContext, bArray, 4096, 4096)
+                    }
+                    binding.imageView.setImageBitmap(correctOrientationByExif(myBitmap))
                 } catch (e: Exception) {
                     Log.e("MainActivity", e.message.toString())
                 }
             }
-        } catch (e:Exception) {
-            Toast.makeText(this,e.message,Toast.LENGTH_LONG).show()
+        } else
+            binding.imageView.setImageBitmap(null)
+    }
+
+    fun loadImageById(fineInfo: FileInfo) {
+        try {
+            val byteArray = ApiRoutins.getImage(this, fineInfo.id!!)
+            if (byteArray.isPresent) {
+                lifecycleScope.launch {
+                    try {
+                        var bmp =
+                            BitmapFactory.decodeByteArray(byteArray.get(), 0, byteArray.get().size)
+                        Files.write(Paths.get(stored.imageFilePath), byteArray.get())
+                        bmp = correctOrientationByExif(bmp)
+                        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S) {
+                            val bArray = bitmapToCompressedByteArray(bmp)
+                            bmp = resizeBitmapWithCoil(applicationContext, bArray, 4096, 4096)
+                        }
+                        binding.imageView.setImageBitmap(bmp)
+                    } catch (e: Exception) {
+                        Log.e("MainActivity", e.message.toString())
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
         }
+    }
+
+    fun bitmapToCompressedByteArray(
+        bitmap: Bitmap,
+        format: Bitmap.CompressFormat = Bitmap.CompressFormat.JPEG,
+        quality: Int = 90
+    ): ByteArray {
+
+        val outputStream = ByteArrayOutputStream()
+
+        // 1. Tömörítés
+        // Az outputStream-be írja a tömörített képadatot.
+        // format: JPEG, PNG, vagy WEBP.
+        // quality: Tömörítési minőség (0-100), PNG esetén figyelmen kívül hagyja.
+        bitmap.compress(format, quality, outputStream)
+
+        // 2. Kiolvasás
+        return outputStream.toByteArray()
     }
 
     fun rotateBitmap(bitmap: Bitmap, orientation: Int): Bitmap? {
@@ -319,10 +390,10 @@ class MainActivity : AppCompatActivity() {
 
         stored = StoredItems()
         if (savedInstanceState != null) {
-            stored.restoreStateFromBundle(this,savedInstanceState)
+            stored.restoreStateFromBundle(this, savedInstanceState)
         } else {
             val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-            stored.restoreFromSharedPrefs(this,sharedPrefs)
+            stored.restoreFromSharedPrefs(this, sharedPrefs)
         }
 
         toolbar = findViewById(R.id.mytoolbar)
@@ -331,7 +402,10 @@ class MainActivity : AppCompatActivity() {
         mScaleGestureDetector = ScaleGestureDetector(this, ScaleListener())
 
         if (intent.hasExtra(getString(R.string.KEY_DOCINFO))
-            && (stored.imageFilePath == "" || File(stored.imageFilePath).name.startsWith(IMAGENAME_FROM_SERVER))) {
+            && (stored.imageFilePath == "" || File(stored.imageFilePath).name.startsWith(
+                IMAGENAME_FROM_SERVER
+            ))
+        ) {
             stored.docInfo =
                 intent.getSerializableExtra(getString(R.string.KEY_DOCINFO)) as DocInfo
             if (stored.docInfo != null && stored.docInfo!!.id != null) {
@@ -354,8 +428,8 @@ class MainActivity : AppCompatActivity() {
                         stored.imageFilePath = Paths.get(storageDir, fileName).toString()
                         loadImageById(currentFileInfo)
                     }
-                } catch (e:Exception) {
-                    Toast.makeText(this,e.message,Toast.LENGTH_LONG).show()
+                } catch (e: Exception) {
+                    Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()
                 }
             }
         } else {
@@ -378,12 +452,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        stored.saveInstanceState(this,outState)
+        stored.saveInstanceState(this, outState)
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
-        stored.restoreStateFromBundle(this,savedInstanceState)
+        stored.restoreStateFromBundle(this, savedInstanceState)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -450,10 +524,12 @@ class MainActivity : AppCompatActivity() {
                             updateFileList()
                             if (fileList.isPresent && fileList.get().isNotEmpty()) {
                                 val firstFileInfo = fileList.get().get(0)
-                                val fileName = "${IMAGENAME_FROM_SERVER}.${firstFileInfo.uniqueFileName.substringAfter(".")}"
+                                val fileName = "${IMAGENAME_FROM_SERVER}.${
+                                    firstFileInfo.uniqueFileName.substringAfter(".")
+                                }"
                                 val storageDir =
                                     getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.path
-                                stored.imageFilePath = Paths.get(storageDir, fileName ).toString()
+                                stored.imageFilePath = Paths.get(storageDir, fileName).toString()
                                 stored.lastIFileInfoId = firstFileInfo.id!!
                                 loadImageById(firstFileInfo)
                             }
@@ -561,6 +637,7 @@ class MainActivity : AppCompatActivity() {
             return displayMetrics.widthPixels
         }
     }
+
     var x: Float = 0F
     var y: Float = 0F
     var dx: Float = 0F
@@ -588,7 +665,9 @@ class MainActivity : AppCompatActivity() {
 
             MotionEvent.ACTION_UP -> {
                 val downDiff = downX - binding.imageView.x
-                if (mScaleFactor <= 1 && downDiff.absoluteValue > IMAGE_SWITCH_MARGIN && fileList.isPresent && fileList.get().isNotEmpty()) {
+                if (mScaleFactor <= 1 && downDiff.absoluteValue > IMAGE_SWITCH_MARGIN && fileList.isPresent && fileList.get()
+                        .isNotEmpty()
+                ) {
                     val fileInfo = fileList.get().firstOrNull {
                         it.id!!.equals(
                             stored.lastIFileInfoId
@@ -597,17 +676,17 @@ class MainActivity : AppCompatActivity() {
                     var idx = fileList.get().indexOf(fileInfo)
                     var isFirst = idx == 0
                     var isLast = idx == fileList.get().size - 1
-                    if (downDiff  < 0) {
+                    if (downDiff < 0) {
                         idx = max(0, idx - 1)
                     } else {
-                        idx = min(fileList.get().size - 1,idx + 1)
+                        idx = min(fileList.get().size - 1, idx + 1)
                     }
                     val width = getScreenWidth(this)
-                    var destinationX = if (downDiff < 0)  width * 1f else width * -1f
+                    var destinationX = if (downDiff < 0) width * 1f else width * -1f
                     if ((isFirst && destinationX > 0) || (isLast && destinationX < 0)) {
                         destinationX = 0f
                     }
-                    ObjectAnimator.ofFloat(binding.imageView,"x", destinationX).apply {
+                    ObjectAnimator.ofFloat(binding.imageView, "x", destinationX).apply {
                         duration = 200
                         start()
                     }.doOnEnd {
@@ -660,13 +739,13 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-        stored.saveState(this,sharedPrefs)
+        stored.saveState(this, sharedPrefs)
     }
 
     override fun onStop() {
         super.onStop()
         val sharedPrefs = getSharedPreferences("my_activity_prefs", Context.MODE_PRIVATE)
-        stored.saveState(this,sharedPrefs)
+        stored.saveState(this, sharedPrefs)
     }
 
 }
