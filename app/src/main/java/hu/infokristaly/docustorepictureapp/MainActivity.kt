@@ -288,6 +288,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun viewImage() {
+        binding.imageView.setImageBitmap(null)
         if (stored.imageFilePath != "") {
             var myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
             lifecycleScope.launch {
@@ -295,11 +296,11 @@ class MainActivity : AppCompatActivity() {
                 myBitmap = correctOrientationByExif(myBitmap)
                 binding.imageView.setImageBitmap(myBitmap)
             }
-        } else
-            binding.imageView.setImageBitmap(null)
+        }
     }
 
     fun loadImageById(fineInfo: FileInfo) {
+        binding.imageView.setImageBitmap(null)
         try {
             val byteArray = ApiRoutins.getImage(this, fineInfo.id!!)
             if (byteArray.isPresent) {
