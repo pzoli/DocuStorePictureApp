@@ -263,9 +263,7 @@ class MainActivity : AppCompatActivity() {
         width: Int,
         height: Int
     ): Bitmap? {
-
         val imageLoader = Coil.imageLoader(context)
-
         val request = ImageRequest.Builder(context)
             .data(source)
             .size(Size(width, height))
@@ -276,19 +274,26 @@ class MainActivity : AppCompatActivity() {
         return (result.drawable as? BitmapDrawable)?.bitmap
     }
 
+    suspend private fun resizeIfOversized(myBitmap: Bitmap): Bitmap? {
+        var result: Bitmap? = myBitmap
+        try {
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (myBitmap.width > 4096 || myBitmap.height > 4096)) {
+                val bArray = bitmapToCompressedByteArray(myBitmap)
+                result = resizeBitmapWithCoil(applicationContext, bArray, 4096, 4096)
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", e.message.toString())
+        }
+        return result
+    }
+
     private fun viewImage() {
         if (stored.imageFilePath != "") {
+            var myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
             lifecycleScope.launch {
-                try {
-                    var myBitmap = BitmapFactory.decodeFile(stored.imageFilePath)
-                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (myBitmap.width > 4096 || myBitmap.height > 4096)) {
-                        val bArray = bitmapToCompressedByteArray(myBitmap)
-                        myBitmap = resizeBitmapWithCoil(applicationContext, bArray, 4096, 4096)
-                    }
-                    binding.imageView.setImageBitmap(correctOrientationByExif(myBitmap))
-                } catch (e: Exception) {
-                    Log.e("MainActivity", e.message.toString())
-                }
+                myBitmap = resizeIfOversized(myBitmap)
+                myBitmap = correctOrientationByExif(myBitmap)
+                binding.imageView.setImageBitmap(myBitmap)
             }
         } else
             binding.imageView.setImageBitmap(null)
@@ -298,20 +303,13 @@ class MainActivity : AppCompatActivity() {
         try {
             val byteArray = ApiRoutins.getImage(this, fineInfo.id!!)
             if (byteArray.isPresent) {
+                var myBitmap =
+                    BitmapFactory.decodeByteArray(byteArray.get(), 0, byteArray.get().size)
+                Files.write(Paths.get(stored.imageFilePath), byteArray.get())
                 lifecycleScope.launch {
-                    try {
-                        var bmp =
-                            BitmapFactory.decodeByteArray(byteArray.get(), 0, byteArray.get().size)
-                        Files.write(Paths.get(stored.imageFilePath), byteArray.get())
-                        bmp = correctOrientationByExif(bmp)
-                        if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.UPSIDE_DOWN_CAKE && (bmp.width > 4096 || bmp.height > 4096)) {
-                            val bArray = bitmapToCompressedByteArray(bmp)
-                            bmp = resizeBitmapWithCoil(applicationContext, bArray, 4096, 4096)
-                        }
-                        binding.imageView.setImageBitmap(bmp)
-                    } catch (e: Exception) {
-                        Log.e("MainActivity", e.message.toString())
-                    }
+                    myBitmap = resizeIfOversized(myBitmap)
+                    myBitmap = correctOrientationByExif(myBitmap)
+                    binding.imageView.setImageBitmap(myBitmap)
                 }
             }
         } catch (e: Exception) {
