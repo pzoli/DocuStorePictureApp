@@ -21,6 +21,12 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/m_download"
+        android:icon="@drawable/baseline_file_download_24"
+        android:title="Download"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/m_crop"
         android:icon="@drawable/baseline_crop_24"
         android:title="Crop"

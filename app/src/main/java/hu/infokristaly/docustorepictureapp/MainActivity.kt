@@ -3,6 +3,7 @@ package hu.infokristaly.docustorepictureapp
 import android.animation.ObjectAnimator
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.ContentValues
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
@@ -46,9 +47,12 @@ import hu.infokristaly.docustorepictureapp.model.FileInfo
 import hu.infokristaly.docustorepictureapp.network.NetworkClient
 import hu.infokristaly.docustorepictureapp.utils.ApiRoutins
 import hu.infokristaly.docustorepictureapp.utils.StoredItems
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileInputStream
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -500,6 +504,10 @@ class MainActivity : AppCompatActivity() {
                 viewImage()
             }
 
+            R.id.m_download -> {
+                downloadCurrentImage()
+            }
+
             R.id.m_delete -> {
                 val alert: AlertDialog.Builder = AlertDialog.Builder(this)
                 alert.setTitle("Delete entry")
@@ -549,6 +557,64 @@ class MainActivity : AppCompatActivity() {
                     stored.docInfo,
                     stored.imageFilePath
                 )
+            }
+        }
+    }
+
+    private fun downloadCurrentImage() {
+        if (stored.imageFilePath.isEmpty()) {
+            Toast.makeText(this, "Nincs megjelenített kép", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val file = File(stored.imageFilePath)
+        if (!file.exists()) {
+            Toast.makeText(this, "A képfájl nem található", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                val filename = "IMG_${timeStamp}.jpg"
+                val contentValues = ContentValues().apply {
+                    put(MediaStore.Images.Media.DISPLAY_NAME, filename)
+                    put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/DocuStore")
+                        put(MediaStore.Images.Media.IS_PENDING, 1)
+                    }
+                }
+
+                val resolver = contentResolver
+                val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+
+                if (uri != null) {
+                    resolver.openOutputStream(uri)?.use { outputStream ->
+                        FileInputStream(file).use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        contentValues.clear()
+                        contentValues.put(MediaStore.Images.Media.IS_PENDING, 0)
+                        resolver.update(uri, contentValues, null, null)
+                    }
+
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "Kép elmentve a Galériába!", Toast.LENGTH_LONG).show()
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@MainActivity, "Nem sikerült elmenteni a képet", Toast.LENGTH_LONG).show()
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Error downloading image: ${e.message}", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@MainActivity, "Hiba a kép mentése során: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
